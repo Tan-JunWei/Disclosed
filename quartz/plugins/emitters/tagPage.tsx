@@ -15,6 +15,7 @@ import {
 import { defaultListPageLayout, sharedPageComponents } from "../../../quartz.layout"
 import { TagContent } from "../../components"
 import { write } from "./helpers"
+import { tagLabel } from "../../util/techniques"
 import { i18n } from "../../i18n"
 import DepGraph from "../../depgraph"
 
@@ -83,9 +84,9 @@ export const TagPage: QuartzEmitterPlugin<Partial<TagPageOptions>> = (userOpts) 
 
       const tagDescriptions: Record<string, ProcessedContent> = Object.fromEntries(
         [...tags].map((tag) => {
-          // use just the tag's own name as the title (not "Tag: X"), matching
-          // how folder pages show just the folder's name
-          const title = tag === "index" ? i18n(cfg.locale).pages.tagContent.tagIndex : tag
+          // the tag's readable name ("Morse Code" for MorseCode) is the page title, matching how
+          // folder pages show just the folder's name
+          const title = tag === "index" ? i18n(cfg.locale).pages.tagContent.tagIndex : tagLabel(tag)
           return [
             tag,
             defaultProcessedContent({
@@ -108,7 +109,7 @@ export const TagPage: QuartzEmitterPlugin<Partial<TagPageOptions>> = (userOpts) 
 
       for (const tag of tags) {
         const slug = joinSegments("tags", tag) as FullSlug
-        const externalResources = pageResources(pathToRoot(slug), resources)
+        const externalResources = pageResources(pathToRoot(slug), resources, ctx.buildId)
         const [tree, file] = tagDescriptions[tag]
         const componentData: QuartzComponentProps = {
           ctx,

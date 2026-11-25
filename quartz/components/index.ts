@@ -7,6 +7,8 @@ import Darkmode from "./Darkmode"
 import Head from "./Head"
 import PageTitle from "./PageTitle"
 import ContentMeta from "./ContentMeta"
+import CaseHeader from "./CaseHeader"
+import ResearchHeader from "./ResearchHeader"
 import Spacer from "./Spacer"
 import TableOfContents from "./TableOfContents"
 import Explorer from "./Explorer"
@@ -23,7 +25,6 @@ import Comments from "./Comments"
 import ReadingProgress from "./ReadingProgress"
 import BackToTop from "./BackToTop"
 import PrevNextNav from "./PrevNextNav"
-import CodeLanguageLabel from "./CodeLanguageLabel"
 import ExplorerToggle from "./ExplorerToggle"
 import DynamicDate from "./DynamicDate"
 import Flex from "./Flex"
@@ -36,6 +37,8 @@ export {
   Head,
   PageTitle,
   ContentMeta,
+  CaseHeader,
+  ResearchHeader,
   Spacer,
   TableOfContents,
   Explorer,
@@ -53,7 +56,6 @@ export {
   ReadingProgress,
   BackToTop,
   PrevNextNav,
-  CodeLanguageLabel,
   ExplorerToggle,
   DynamicDate,
   Flex,

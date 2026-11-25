@@ -16,7 +16,7 @@ import { toHast } from "mdast-util-to-hast"
 import { toHtml } from "hast-util-to-html"
 import { PhrasingContent } from "mdast-util-find-and-replace/lib"
 import { capitalize } from "../../util/lang"
-import { colorForTag } from "../../util/tagColor"
+import { tagColorStyle } from "../../util/tagColor"
 import { PluggableList } from "unified"
 
 export interface Options {
@@ -179,7 +179,6 @@ export const ObsidianFlavoredMarkdown: QuartzTransformerPlugin<Partial<Options>>
         src = src.replace(tableRegex, (value) => {
           // escape all aliases and headers in wikilinks inside a table
           return value.replace(tableWikilinkRegex, (_value, raw) => {
-            // const [raw]: (string | undefined)[] = capture
             let escaped = raw ?? ""
             escaped = escaped.replace("#", "\\#")
             // escape pipe characters if they are not already escaped
@@ -234,17 +233,17 @@ export const ObsidianFlavoredMarkdown: QuartzTransformerPlugin<Partial<Options>>
                   if ([".png", ".jpg", ".jpeg", ".gif", ".bmp", ".svg", ".webp"].includes(ext)) {
                     const match = wikilinkImageEmbedRegex.exec(alias ?? "")
                     const alt = match?.groups?.alt ?? ""
-                    const width = match?.groups?.width ?? "auto"
-                    const height = match?.groups?.height ?? "auto"
+                    // a size the author gave, otherwise ImageDimensions reads it from the file
+                    const width = match?.groups?.width
+                    const height = match?.groups?.height
                     return {
                       type: "image",
                       url,
                       data: {
                         hProperties: {
-                          width,
-                          height,
+                          ...(width && { width }),
+                          ...(height && { height }),
                           alt,
-                          loading: "lazy",
                         },
                       },
                     }
@@ -337,14 +336,13 @@ export const ObsidianFlavoredMarkdown: QuartzTransformerPlugin<Partial<Options>>
                   file.data.frontmatter.tags = [...new Set([...noteTags, tag])]
                 }
 
-                const { hue, lightL, darkL } = colorForTag(tag)
                 return {
                   type: "link",
                   url: base + `/tags/${tag}`,
                   data: {
                     hProperties: {
                       className: ["tag-link"],
-                      style: `--tag-hue:${hue};--tag-light-l:${lightL}%;--tag-dark-l:${darkL}%`,
+                      style: tagColorStyle(tag),
                     },
                   },
                   children: [

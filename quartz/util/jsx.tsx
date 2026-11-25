@@ -6,7 +6,12 @@ import { type FilePath } from "./path"
 
 const customComponents: Components = {
   table: (props) => (
-    <div class="table-container">
+    <div
+      class="table-container"
+      role="region"
+      aria-label="Table, scroll horizontally if needed"
+      tabIndex={0}
+    >
       <table {...props} />
     </div>
   ),

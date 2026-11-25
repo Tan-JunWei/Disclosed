@@ -203,7 +203,8 @@ export const ComponentResources: QuartzEmitterPlugin = () => {
 
           googleFontsStyleSheet = googleFontsStyleSheet.replace(
             url,
-            `https://${cfg.baseUrl}/static/fonts/${filename}.ttf`,
+            // relative to index.css, which sits at the site root
+            `static/fonts/${filename}.ttf`,
           )
 
           promises.push(

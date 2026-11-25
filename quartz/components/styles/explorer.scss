@@ -10,8 +10,10 @@ button#explorer {
   display: flex;
   align-items: center;
 
-  & h2 {
+  & .explorer-title {
+    font-family: var(--headerFont);
     font-size: 1rem;
+    font-weight: 700;
     display: inline-block;
     margin: 0;
   }
@@ -27,53 +29,32 @@ button#explorer {
   }
 }
 
+// ---- folder open/close animation. `overflow: clip`, never `hidden`: hidden would make every nested
+// list its own scroll container, and that breaks the sticky folder rows below.
 .folder-outer {
   display: grid;
   grid-template-rows: 0fr;
-  transition: grid-template-rows 0.3s ease-in-out;
-}
+  transition: grid-template-rows 260ms cubic-bezier(0.2, 0.7, 0.2, 1);
 
-.folder-outer.open {
-  grid-template-rows: 1fr;
-}
-
-.folder-outer > ul {
-  overflow: hidden;
-}
-
-#explorer-content {
-  list-style: none;
-  overflow: hidden;
-  max-height: none;
-  transition:
-    max-height 0.35s ease,
-    visibility 0s linear 0s;
-  margin-top: 0.5rem;
-  visibility: visible;
-
-  &.collapsed {
-    transition:
-      max-height 0.35s ease,
-      visibility 0s linear 0.35s;
-    visibility: hidden;
-  }
-
-  &.collapsed > .overflow::after {
+  > ul {
+    min-height: 0;
+    overflow: clip;
     opacity: 0;
+    transform: translateY(-4px);
+    transition:
+      opacity 160ms ease,
+      transform 220ms cubic-bezier(0.2, 0.7, 0.2, 1);
   }
 
-  & ul {
-    list-style: none;
-    margin: 0.08rem 0;
-    padding: 0;
-    transition:
-      max-height 0.35s ease,
-      transform 0.35s ease,
-      opacity 0.2s ease;
-    & li > a {
-      color: var(--dark);
-      opacity: 0.75;
-      pointer-events: all;
+  &.open {
+    grid-template-rows: 1fr;
+
+    > ul {
+      opacity: 1;
+      transform: translateY(0);
+      transition:
+        opacity 180ms ease 24ms,
+        transform 240ms cubic-bezier(0.2, 0.7, 0.2, 1) 16ms;
     }
   }
 }
@@ -84,76 +65,6 @@ svg {
   & > polyline {
     pointer-events: none;
   }
-}
-
-.folder-container {
-  flex-direction: row;
-  display: flex;
-  align-items: center;
-  user-select: none;
-
-  & div > a {
-    color: var(--secondary);
-    font-family: var(--headerFont);
-    font-size: 0.95rem;
-    font-weight: $semiBoldWeight;
-    line-height: 1.5rem;
-    display: inline-block;
-  }
-
-  & div > a:hover {
-    color: var(--tertiary);
-  }
-
-  & div > button {
-    color: var(--dark);
-    background-color: transparent;
-    border: none;
-    text-align: left;
-    cursor: pointer;
-    padding-left: 0;
-    padding-right: 0;
-    display: flex;
-    align-items: center;
-    font-family: var(--headerFont);
-
-    & span {
-      font-size: 0.95rem;
-      display: inline-block;
-      color: var(--secondary);
-      font-weight: $semiBoldWeight;
-      margin: 0;
-      line-height: 1.5rem;
-      pointer-events: none;
-    }
-  }
-}
-
-.folder-icon {
-  margin-right: 5px;
-  color: var(--secondary);
-  cursor: pointer;
-  transition: transform 0.3s ease;
-  backface-visibility: visible;
-}
-
-li:has(> .folder-outer:not(.open)) > .folder-container > svg {
-  transform: rotate(-90deg);
-}
-
-.folder-icon:hover {
-  color: var(--tertiary);
-}
-
-.no-background::after {
-  background: none !important;
-}
-
-#explorer-end {
-  // needs height so IntersectionObserver gets triggered
-  height: 4px;
-  // remove default margin from li
-  margin: 0;
 }
 
 #explorer-close {
@@ -202,6 +113,466 @@ li:has(> .folder-outer:not(.open)) > .folder-container > svg {
 
     &:hover {
       color: var(--tertiary);
+    }
+  }
+}
+
+// ---- the tree
+#explorer-content {
+  // one row height drives the layout, the sticky offsets and the touch targets
+  --row-h: 32px;
+  // indent guides stay at roughly 3:1 against the sidebar in both themes
+  --guide: color-mix(in srgb, var(--gray) 76%, transparent);
+  --guide-path: color-mix(in srgb, var(--secondary) 85%, transparent);
+  --hover-fill: var(--highlight);
+  --active-fill: color-mix(in srgb, var(--secondary) 14%, transparent);
+
+  display: grid;
+  grid-template-rows: 1fr;
+  overflow: clip;
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  opacity: 1;
+  visibility: visible;
+  transition:
+    grid-template-rows 260ms cubic-bezier(0.2, 0.7, 0.2, 1),
+    opacity 180ms ease,
+    visibility 0s;
+
+  &.collapsed {
+    grid-template-rows: 0fr;
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      grid-template-rows 240ms ease,
+      opacity 140ms ease,
+      visibility 0s 240ms;
+  }
+
+  > .explorer-body {
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  @media (pointer: coarse) {
+    --row-h: 44px;
+    font-size: 0.95rem;
+  }
+
+  ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  li {
+    margin: 1px 0;
+    padding: 0;
+  }
+
+  // indent guide under the parent's chevron, one small step per level. It is a background rather
+  // than a border so each file's rating line can be drawn over it inside the padding box, which
+  // `overflow: clip` does not cut off. The branch leading to the current page uses the accent colour.
+  ul[data-folderul]:not([data-folderul=""]) {
+    margin-left: calc(0.5rem + 6px);
+    padding-left: 5px;
+    background: linear-gradient(var(--guide), var(--guide)) left top / 1px 100% no-repeat;
+
+    &.on-path {
+      background-image: linear-gradient(var(--guide-path), var(--guide-path));
+    }
+  }
+
+  // ---- rows: files, folders and the pinned Explore link share one anatomy
+  .explorer-file,
+  .folder-container,
+  .explorer-pin {
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: var(--row-h);
+    box-sizing: border-box;
+    // vertical padding only matters for titles that wrap onto a second line, otherwise min-height wins
+    padding: 0.3rem 0.5rem;
+    border-radius: 0;
+    // opaque on purpose: folder rows stick to the top while their children scroll underneath
+    background-color: var(--light);
+    color: var(--darkgray);
+    font-weight: 400;
+    line-height: 1.3;
+    text-decoration: none;
+
+    // hover / active fill
+    &::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      border-radius: inherit;
+      background: transparent;
+      transition: background-color 150ms ease;
+    }
+  }
+
+  .explorer-file:hover,
+  .folder-container:hover,
+  .explorer-pin:hover {
+    color: var(--dark);
+
+    &::before {
+      background: var(--hover-fill);
+    }
+  }
+
+  // the current page: a soft fill and the strongest text colour in the list (same size as its
+  // neighbours, so nothing reflows). For files, the difficulty line beside them also widens a touch.
+  .explorer-file.active,
+  .folder-container.active,
+  .explorer-pin.active {
+    color: var(--dark);
+    font-weight: 600;
+
+    &::before {
+      background: var(--active-fill);
+    }
+  }
+
+  .explorer-pin.active {
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--secondary) 55%, transparent);
+  }
+
+  .folder-container.is-selected::before {
+    background: var(--hover-fill);
+  }
+
+  // ancestors of the current page are not boxed, just tinted
+  .folder-container.is-current-path {
+    .folder-title {
+      color: var(--dark);
+    }
+
+    .folder-chevron,
+    .tree-icon {
+      color: var(--secondary);
+    }
+  }
+
+  // keyboard focus is drawn inside the row so the clipped lists never cut it off
+  .explorer-file:focus-visible,
+  .explorer-pin:focus-visible,
+  .folder-container:has(:focus-visible) {
+    outline: 2px solid var(--secondary);
+    outline-offset: -2px;
+  }
+
+  .folder-button:focus-visible,
+  .folder-link:focus-visible,
+  .folder-toggle:focus-visible {
+    outline: none;
+  }
+
+  // ---- folders
+  .folder-container {
+    position: sticky;
+    // each level pins just below its parent, like an editor's sticky scroll, so the path to the
+    // current page stays visible however far the list is scrolled
+    top: calc(var(--depth, 0) * var(--row-h));
+    z-index: 2;
+    user-select: none;
+    padding: 0;
+
+    .folder-button,
+    .folder-link,
+    .folder-toggle {
+      background: transparent;
+      border: 0;
+      color: inherit;
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+      line-height: inherit;
+    }
+
+    .folder-button,
+    .folder-link {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex: 1;
+      min-width: 0;
+      width: 100%;
+      min-height: var(--row-h);
+      padding: 0 0.5rem;
+    }
+
+    .folder-link {
+      text-decoration: none;
+    }
+
+    .folder-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 26px;
+      width: 26px;
+      min-height: var(--row-h);
+      padding: 0;
+    }
+
+    > div[data-folderpath] {
+      flex: 1;
+      min-width: 0;
+    }
+  }
+
+  .folder-title {
+    font-weight: 500;
+    overflow-wrap: anywhere;
+  }
+
+  .folder-chevron {
+    flex: 0 0 12px;
+    width: 12px;
+    height: 12px;
+    color: var(--gray);
+    transition:
+      transform 240ms cubic-bezier(0.2, 0.7, 0.2, 1),
+      color 160ms ease;
+  }
+
+  .folder-button[aria-expanded="true"] .folder-chevron,
+  .folder-toggle[aria-expanded="true"] .folder-chevron {
+    transform: rotate(90deg);
+  }
+
+  .tree-icon {
+    flex: 0 0 16px;
+    width: 16px;
+    height: 16px;
+    color: var(--gray);
+    transition: color 160ms ease;
+  }
+
+  .folder-open,
+  .folder-closed {
+    transition: opacity 180ms ease;
+  }
+
+  .folder-open {
+    fill: color-mix(in srgb, currentColor 10%, transparent);
+    opacity: 0;
+  }
+
+  .folder-button[aria-expanded="true"] .folder-open,
+  .folder-link[data-folder-open="true"] .folder-open {
+    opacity: 1;
+  }
+
+  .folder-button[aria-expanded="true"] .folder-closed,
+  .folder-link[data-folder-open="true"] .folder-closed {
+    opacity: 0;
+  }
+
+  // top-level sections read as small monospace labels, the same voice as the home page's
+  // collection cards, which sets them apart from the categories below
+  .folder-container[data-depth="1"] {
+    margin-top: 6px;
+
+    .folder-title {
+      font-family: var(--codeFont);
+      word-spacing: normal;
+      font-size: 0.74rem;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .tree-icon {
+      display: none;
+    }
+  }
+
+  // ---- counts: plain, quiet, right-aligned numerals, like the counts in the homepage charts
+  .folder-count {
+    flex: none;
+    margin-left: auto;
+    min-width: 1.6rem;
+    text-align: right;
+    font-size: 0.76rem;
+    font-weight: 400;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    color: var(--gray);
+    transition: color 150ms ease;
+  }
+
+  // brighten with the row, so the number follows the user's attention instead of competing with it
+  .folder-container:hover .folder-count,
+  .folder-container.active .folder-count,
+  .folder-container.is-current-path .folder-count,
+  .explorer-pin:hover .folder-count,
+  .explorer-pin.active .folder-count {
+    color: var(--darkgray);
+  }
+
+  // section rows are mono labels, so their numbers are mono too
+  .folder-container[data-depth="1"] .folder-count {
+    font-family: var(--codeFont);
+    word-spacing: normal;
+    font-size: 0.72rem;
+    letter-spacing: 0.02em;
+  }
+
+  // ---- files: each file's rating is a hairline on the indent guide beside it, as quiet as the
+  // guide and in the same hues as the donut and the post wall. Neighbours with the same rating join
+  // into one band. The tone leans toward the deeper text token because vivid amber nearly vanishes
+  // on the pale theme. Unrated files and Overview items have a transparent line.
+  .explorer-line {
+    --line-strength: 70%;
+
+    position: absolute;
+    top: -1px;
+    bottom: -1px;
+    left: -5px;
+    width: 1px;
+    pointer-events: none;
+    background: color-mix(in srgb, var(--tone, transparent) var(--line-strength), transparent);
+    transition: width 150ms ease;
+
+    &[data-diff="beginner"] {
+      --tone: color-mix(in srgb, var(--diff-beginner-fill) 55%, var(--diff-beginner));
+    }
+    &[data-diff="easy"] {
+      --tone: color-mix(in srgb, var(--diff-easy-fill) 55%, var(--diff-easy));
+    }
+    &[data-diff="medium"] {
+      --tone: color-mix(in srgb, var(--diff-medium-fill) 55%, var(--diff-medium));
+    }
+    &[data-diff="hard"] {
+      --tone: color-mix(in srgb, var(--diff-hard-fill) 55%, var(--diff-hard));
+    }
+    &[data-diff="insane"] {
+      --tone: color-mix(in srgb, var(--diff-insane-fill) 55%, var(--diff-insane));
+    }
+    &[data-diff="expert"] {
+      --tone: color-mix(in srgb, var(--diff-expert-fill) 55%, var(--diff-expert));
+    }
+  }
+
+  // selected: the line gets slightly wider (1px -> 2px), nothing else about it changes
+  .explorer-file.active .explorer-line {
+    width: 2px;
+
+    // an unrated file has no hue of its own, so its line takes the colour of the branch's guide
+    &[data-diff="none"] {
+      background: var(--guide-path);
+    }
+  }
+
+  .explorer-overview-icon {
+    flex: none;
+    width: 12px;
+    height: 12px;
+    color: var(--gray);
+  }
+
+  .explorer-name {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .explorer-overview .explorer-name {
+    font-weight: 500;
+  }
+
+  // ---- "Explore posts", pinned above the tree: outlined like the sidebar's search button
+  .explorer-pin {
+    margin-bottom: 8px;
+    box-shadow: inset 0 0 0 1px var(--border);
+    color: var(--dark);
+    font-weight: 600;
+
+    svg {
+      flex: none;
+      width: 14px;
+      height: 14px;
+      color: var(--gray);
+    }
+  }
+
+  .explorer-sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+  }
+}
+
+// ---- the scroller: slim scrollbar, a hairline when scrolled, a fade only while more is below
+#explorer-ul {
+  --fade-bottom: 0px;
+
+  max-height: min(70dvh, calc(100dvh - 17rem));
+  border-top: 1px solid transparent;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--gray) 45%, transparent) transparent;
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - var(--fade-bottom)), transparent);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - var(--fade-bottom)), transparent);
+  transition: border-color 150ms ease;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--gray) 45%, transparent);
+  }
+
+  &.is-scrolled {
+    border-top-color: var(--lightgray);
+  }
+
+  &.can-scroll-more {
+    --fade-bottom: 40px;
+  }
+
+  // the generic .overflow gradient is replaced by the mask above
+  &.overflow::after {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .explorer,
+  #explorer-content,
+  #explorer-content.collapsed,
+  .folder-outer,
+  .folder-outer > ul,
+  .folder-chevron,
+  .folder-open,
+  .folder-closed,
+  .explorer-file,
+  .folder-container,
+  .explorer-pin,
+  .explorer-line,
+  #explorer-ul {
+    transition: none;
+  }
+
+  #explorer-content {
+    .explorer-file::before,
+    .folder-container::before,
+    .explorer-pin::before {
+      transition: none;
     }
   }
 }

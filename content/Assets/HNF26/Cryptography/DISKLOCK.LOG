@@ -1,0 +1,4 @@
+10-23-1991 21:02  DISKLOCK v1.0 started
+10-23-1991 21:04  LOCK    PHOTO.BMP -> PHOTO.LCK   518454 bytes   OK
+10-23-1991 21:04  DELETE  PHOTO.BMP                               OK
+10-23-1991 21:05  DISKLOCK v1.0 exited

@@ -1,0 +1,160 @@
+@use "../../styles/variables.scss" as *;
+@use "../../styles/surface.scss" as surface;
+
+.nf-hero {
+  @include surface.card-surface(18%);
+  @include surface.card-grid(60%, 100%, 20px, 38%, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin: 2rem 0 1.6rem;
+  padding: 1.6rem 1.8rem;
+
+  .nf-eyebrow {
+    margin: 0 0 0.5rem;
+    font-family: var(--codeFont);
+    word-spacing: normal;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--gray);
+  }
+
+  h1 {
+    margin: 0 0 0.5rem;
+    font-size: 3.4rem;
+    line-height: 1;
+    background: linear-gradient(90deg, var(--secondary), var(--tertiary));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    width: fit-content;
+  }
+
+  .nf-message {
+    margin: 0;
+    color: var(--darkgray);
+  }
+}
+
+.nf-scope {
+  flex-shrink: 0;
+  width: 6.5rem;
+  height: 6.5rem;
+  color: var(--secondary);
+
+  .nf-scope-fill {
+    fill: color-mix(in srgb, var(--secondary) 14%, transparent);
+  }
+
+  @media all and (max-width: $mobileBreakpoint) {
+    width: 4.5rem;
+    height: 4.5rem;
+  }
+}
+
+.nf-recent {
+  margin-bottom: 1.6rem;
+
+  h2 {
+    margin: 0 0 0.6rem;
+    font-family: var(--codeFont);
+    word-spacing: normal;
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--gray);
+  }
+
+  ul {
+    display: grid;
+    gap: 0.6rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  li {
+    margin: 0;
+    padding: 0;
+  }
+
+  a {
+    @include surface.card-surface(12%);
+    @include surface.card-grid(45%, 100%, 16px, 28%, 0.75);
+    @include surface.card-interactive(2px);
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.85rem 1.1rem;
+    color: var(--dark);
+    font-weight: $semiBoldWeight;
+  }
+}
+
+.nf-recent-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.9rem;
+  flex-shrink: 0;
+  font-size: 0.78rem;
+  font-weight: $normalWeight;
+  color: var(--gray);
+}
+
+.nf-diff {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  text-transform: capitalize;
+}
+
+.nf-diff-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background-color: var(--gray);
+}
+
+@each $level in beginner, easy, medium, hard, insane, expert {
+  .nf-diff[data-diff="#{$level}"] {
+    color: var(--diff-#{$level});
+
+    .nf-diff-dot {
+      background-color: var(--diff-#{$level});
+    }
+  }
+}
+
+// link buttons share the pill style used by the section cards
+.nf-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin: 0;
+
+  a {
+    --card-accent: var(--secondary);
+    @include surface.pill-button;
+    background: none;
+    padding: 0.45rem 1rem;
+    font-size: 0.82rem;
+
+    &:hover,
+    &:focus-visible {
+      background-color: var(--card-accent);
+      border-color: var(--card-accent);
+      color: var(--light);
+    }
+  }
+}
+
+@media all and (max-width: $mobileBreakpoint) {
+  .nf-recent a {
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+}

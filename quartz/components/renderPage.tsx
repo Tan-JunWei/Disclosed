@@ -2,12 +2,13 @@ import { render } from "preact-render-to-string"
 import { QuartzComponent, QuartzComponentProps } from "./types"
 import HeaderConstructor from "./Header"
 import BodyConstructor from "./Body"
-import { JSResourceToScriptElement, StaticResources } from "../util/resources"
+import { JSResourceToScriptElement, StaticResources, assetVersion } from "../util/resources"
 import { clone, FullSlug, RelativeURL, joinSegments, normalizeHastElement } from "../util/path"
 import { visit } from "unist-util-visit"
 import { Root, Element, ElementContent } from "hast"
 import { GlobalConfiguration } from "../cfg"
 import { i18n } from "../i18n"
+import { MATH_RESOURCES } from "../plugins/transformers/latex"
 
 interface RenderComponents {
   head: QuartzComponent
@@ -21,30 +22,27 @@ interface RenderComponents {
 }
 
 const headerRegex = new RegExp(/h[1-6]/)
+/**
+ * `version` is appended to the bundled CSS and scripts. Their file names never change, so the query
+ * string is what lets a static host cache them for a long time and still serve a new build at once.
+ */
 export function pageResources(
   baseDir: FullSlug | RelativeURL,
   staticResources: StaticResources,
+  version?: string,
 ): StaticResources {
-  const contentIndexPath = joinSegments(baseDir, "static/contentIndex.json")
-  const contentIndexScript = `const fetchData = fetch("${contentIndexPath}").then(data => data.json())`
-
+  const v = version ? `?v=${assetVersion(version)}` : ""
   return {
-    css: [joinSegments(baseDir, "index.css"), ...staticResources.css],
+    css: [joinSegments(baseDir, "index.css") + v, ...staticResources.css],
     js: [
       {
-        src: joinSegments(baseDir, "prescript.js"),
+        src: joinSegments(baseDir, "prescript.js") + v,
         loadTime: "beforeDOMReady",
         contentType: "external",
       },
-      {
-        loadTime: "beforeDOMReady",
-        contentType: "inline",
-        spaPreserve: true,
-        script: contentIndexScript,
-      },
       ...staticResources.js,
       {
-        src: joinSegments(baseDir, "postscript.js"),
+        src: joinSegments(baseDir, "postscript.js") + v,
         loadTime: "afterDOMReady",
         moduleType: "module",
         contentType: "external",
@@ -53,13 +51,25 @@ export function pageResources(
   }
 }
 
+/** Resources a plugin only needs on some pages, such as the KaTeX stylesheet on pages with math. */
+function forPage(resources: StaticResources, fileData: QuartzComponentProps["fileData"]) {
+  if (fileData.hasMath) return resources
+  return {
+    css: resources.css.filter((href) => !MATH_RESOURCES.has(href)),
+    js: resources.js.filter((js) => !(js.contentType === "external" && MATH_RESOURCES.has(js.src))),
+  }
+}
+
 export function renderPage(
   cfg: GlobalConfiguration,
   slug: FullSlug,
   componentData: QuartzComponentProps,
   components: RenderComponents,
-  pageResources: StaticResources,
+  allResources: StaticResources,
 ): string {
+  const pageResources = forPage(allResources, componentData.fileData)
+  componentData = { ...componentData, externalResources: pageResources }
+
   // make a deep copy of the tree so we don't remove the transclusion references
   // for the file cached in contentMap in build.ts
   const root = clone(componentData.tree) as Root
@@ -217,22 +227,28 @@ export function renderPage(
     <html lang={lang}>
       <Head {...componentData} />
       <body data-slug={slug}>
+        {/* data-router-ignore: the SPA router would otherwise only scroll, never move focus */}
+        <a class="skip-link" href="#main-content" data-router-ignore="true">
+          Skip to main content
+        </a>
         <div id="quartz-root" class="page">
           <Body {...componentData}>
             {LeftComponent}
-            <div class="center">
-              <div class="page-header">
-                <Header {...componentData}>
-                  {header.map((HeaderComponent) => (
-                    <HeaderComponent {...componentData} />
-                  ))}
-                </Header>
-                <div class="popover-hint">
-                  {beforeBody.map((BodyComponent) => (
-                    <BodyComponent {...componentData} />
-                  ))}
+            <main class="center" id="main-content" tabIndex={-1}>
+              {(header.length > 0 || beforeBody.length > 0) && (
+                <div class="page-header">
+                  <Header {...componentData}>
+                    {header.map((HeaderComponent) => (
+                      <HeaderComponent {...componentData} />
+                    ))}
+                  </Header>
+                  <div class="popover-hint">
+                    {beforeBody.map((BodyComponent) => (
+                      <BodyComponent {...componentData} />
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
               <Content {...componentData} />
               <hr />
               <div class="page-footer">
@@ -240,8 +256,8 @@ export function renderPage(
                   <BodyComponent {...componentData} />
                 ))}
               </div>
-            </div>
-            {RightComponent}
+            </main>
+            {right.length > 0 ? RightComponent : <></>}
           </Body>
           <Footer {...componentData} />
         </div>

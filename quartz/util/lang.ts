@@ -11,3 +11,9 @@ export function classNames(
   }
   return classes.join(" ")
 }
+
+/** Wraps a component script in its own function scope, so concatenated scripts cannot collide or
+ * break one another mid-statement. */
+export function wrapScript(script?: string): string {
+  return script ? `;(function(){${script}})();` : ""
+}

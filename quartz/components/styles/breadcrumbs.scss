@@ -1,3 +1,5 @@
+@use "../../styles/variables.scss" as *;
+
 .breadcrumb-container {
   margin: 0;
   margin-top: 0.75rem;
@@ -15,8 +17,101 @@
     padding: 0;
     line-height: normal;
   }
+
+  // ancestors are the quietest layer: regular weight and grey, so the current page and the
+  // chevrons carry the colour
+  a {
+    color: color-mix(in srgb, var(--gray) 40%, var(--darkgray));
+    font-weight: $normalWeight;
+    transition: color 0.15s ease;
+
+    &:hover {
+      color: var(--secondary);
+    }
+  }
   display: flex;
   flex-direction: row;
   align-items: center;
   justify-content: center;
+}
+
+.breadcrumb-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+// the chevron runs left to right from the site's teal (the same hue as the homepage ink) into the
+// violet accent, so both ends of the gradient stay visible even at this small size
+:root {
+  --breadcrumb-chevron-start: oklch(0.62 0.11 205);
+}
+
+:root[saved-theme="dark"] {
+  --breadcrumb-chevron-start: hsl(188 55% 64%);
+}
+
+.breadcrumb-stop-start {
+  stop-color: var(--breadcrumb-chevron-start);
+}
+
+.breadcrumb-stop-end {
+  stop-color: var(--tertiary);
+}
+
+.breadcrumb-sep {
+  display: inline-flex;
+  color: var(--tertiary);
+
+  .breadcrumb-sep-echo {
+    opacity: 0.3;
+    transition:
+      opacity 0.2s ease,
+      transform 0.2s ease;
+  }
+
+  svg {
+    display: block;
+    transition: transform 0.2s ease;
+  }
+}
+
+// hovering a crumb nudges its chevron forward, a small hint of direction
+.breadcrumb-element:hover .breadcrumb-sep {
+  svg {
+    transform: translateX(2px);
+  }
+
+  .breadcrumb-sep-echo {
+    opacity: 0.55;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .breadcrumb-sep svg,
+  .breadcrumb-sep .breadcrumb-sep-echo {
+    transition: none;
+  }
+}
+
+.breadcrumb-current {
+  // no box: every crumb shares one unbordered style, and the current page differs by colour and weight
+  color: var(--tertiary);
+  font-weight: $semiBoldWeight;
+}
+
+@media (pointer: coarse) {
+  .breadcrumb-container {
+    margin-top: 0;
+    gap: 0 0.5rem;
+  }
+
+  .breadcrumb-element a,
+  .breadcrumb-current {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding-inline: 0.15rem;
+  }
 }

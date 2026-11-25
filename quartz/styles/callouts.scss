@@ -1,14 +1,55 @@
 @use "./variables.scss" as *;
-@use "sass:color";
 
+// Callouts use the site's card language: a surface panel with the accent washing in from the corner
+// beside the icon, a fine grid patch in the opposite corner, and a hairline border tinted by the
+// accent. Each type sets only `--callout-accent`. The palette is the site's own: note is the theme's
+// navy (--secondary), tip and important its violet (--tertiary), the rest are matched-lightness
+// oklch hues. They use their own variable names so nothing nested inside (code blocks, tables)
+// inherits a callout's tint through the site-wide --border or --bg.
 .callout {
-  border: 1px solid var(--border);
-  background-color: var(--bg);
-  border-radius: 5px;
-  padding: 0 1rem;
+  --callout-accent: var(--secondary);
+  --callout-wash: 15%;
+  position: relative;
+  isolation: isolate;
+  border: 1px solid color-mix(in srgb, var(--callout-accent) 38%, var(--border));
+  border-radius: 14px;
+  background: linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--callout-accent) var(--callout-wash), transparent),
+      transparent 60%
+    ),
+    var(--surface);
+  box-shadow: var(--surface-shadow);
+  padding: 0 1.1rem;
   overflow-y: hidden;
   transition: max-height 0.3s ease;
   box-sizing: border-box;
+
+  // the grid patch from the cards, faint so it never competes with the text
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    z-index: -1;
+    width: 9rem;
+    height: 5.5rem;
+    background-image: linear-gradient(
+        color-mix(in srgb, var(--callout-accent) 30%, transparent) 1px,
+        transparent 1px
+      ),
+      linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--callout-accent) 30%, transparent) 1px,
+        transparent 1px
+      );
+    background-size: 18px 18px;
+    background-position: right top;
+    -webkit-mask-image: radial-gradient(circle at 100% 0%, #000 0%, transparent 72%);
+    mask-image: radial-gradient(circle at 100% 0%, #000 0%, transparent 72%);
+    opacity: 0.55;
+    pointer-events: none;
+  }
 
   & > .callout-content > :first-child {
     margin-top: 0;
@@ -29,87 +70,55 @@
   --callout-icon-quote: url('data:image/svg+xml; utf8, <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"></path><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"></path></svg>');
   --callout-icon-fold: url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"%3E%3Cpolyline points="6 9 12 15 18 9"%3E%3C/polyline%3E%3C/svg%3E');
 
-  // darkened variants of the colours in the dark-mode block below, for contrast on light backgrounds
   &[data-callout] {
-    --color: #0562ff;
-    --border: #0562ff44;
-    --bg: #0562ff10;
     --callout-icon: var(--callout-icon-note);
   }
-
   &[data-callout="abstract"] {
-    --color: #0076ac;
-    --border: #0076ac44;
-    --bg: #0076ac10;
+    --callout-accent: oklch(0.5 0.08 228);
     --callout-icon: var(--callout-icon-abstract);
   }
-
   &[data-callout="info"],
   &[data-callout="todo"] {
-    --color: #007b8e;
-    --border: #007b8e44;
-    --bg: #007b8e10;
+    --callout-accent: oklch(0.52 0.08 198);
     --callout-icon: var(--callout-icon-info);
   }
-
   &[data-callout="todo"] {
     --callout-icon: var(--callout-icon-todo);
   }
-
   &[data-callout="tip"] {
-    --color: #007e6d;
-    --border: #007e6d44;
-    --bg: #007e6d10;
+    --callout-accent: var(--tertiary);
     --callout-icon: var(--callout-icon-tip);
   }
-
   &[data-callout="success"] {
-    --color: #077f5a;
-    --border: #077f5a44;
-    --bg: #077f5a10;
+    --callout-accent: oklch(0.52 0.1 155);
     --callout-icon: var(--callout-icon-success);
   }
-
   &[data-callout="question"] {
-    --color: #91681c;
-    --border: #91681c44;
-    --bg: #91681c10;
+    --callout-accent: oklch(0.57 0.11 75);
     --callout-icon: var(--callout-icon-question);
   }
-
   &[data-callout="warning"] {
-    --color: #a55e20;
-    --border: #a55e2044;
-    --bg: #a55e2010;
+    --callout-accent: oklch(0.58 0.13 50);
     --callout-icon: var(--callout-icon-warning);
   }
-
   &[data-callout="failure"],
   &[data-callout="danger"],
   &[data-callout="bug"] {
-    --color: #d62a2a;
-    --border: #d62a2a44;
-    --bg: #d62a2a10;
+    --callout-accent: oklch(0.55 0.15 25);
     --callout-icon: var(--callout-icon-failure);
   }
-
   &[data-callout="bug"] {
     --callout-icon: var(--callout-icon-bug);
   }
-
   &[data-callout="danger"] {
     --callout-icon: var(--callout-icon-danger);
   }
-
   &[data-callout="example"] {
-    --color: #7a43b5;
-    --border: #7a43b544;
-    --bg: #7a43b510;
+    --callout-accent: oklch(0.5 0.11 330);
     --callout-icon: var(--callout-icon-example);
   }
-
   &[data-callout="quote"] {
-    --color: var(--secondary);
+    --callout-accent: var(--gray);
     --callout-icon: var(--callout-icon-quote);
   }
 
@@ -118,103 +127,91 @@
   }
 }
 
+// lighter versions of the same hues, for the dark ground
 :root[saved-theme="dark"] .callout {
-  &[data-callout] {
-    --color: #448aff;
-    --border: #448aff44;
-    --bg: #448aff10;
-  }
+  --callout-wash: 13%;
 
   &[data-callout="abstract"] {
-    --color: #00b0ff;
-    --border: #00b0ff44;
-    --bg: #00b0ff10;
+    --callout-accent: oklch(0.78 0.07 228);
   }
-
   &[data-callout="info"],
   &[data-callout="todo"] {
-    --color: #00b8d4;
-    --border: #00b8d444;
-    --bg: #00b8d410;
+    --callout-accent: oklch(0.78 0.08 198);
   }
-
-  &[data-callout="tip"] {
-    --color: #00bfa5;
-    --border: #00bfa544;
-    --bg: #00bfa510;
-  }
-
   &[data-callout="success"] {
-    --color: #09ad7a;
-    --border: #09ad7144;
-    --bg: #09ad7110;
+    --callout-accent: oklch(0.78 0.11 155);
   }
-
   &[data-callout="question"] {
-    --color: #dba642;
-    --border: #dba64244;
-    --bg: #dba64210;
+    --callout-accent: oklch(0.82 0.1 80);
   }
-
   &[data-callout="warning"] {
-    --color: #db8942;
-    --border: #db894244;
-    --bg: #db894210;
+    --callout-accent: oklch(0.78 0.11 55);
   }
-
-  // nudged lighter than #db4242 for contrast
   &[data-callout="failure"],
   &[data-callout="danger"],
   &[data-callout="bug"] {
-    --color: #dd4b4b;
-    --border: #dd4b4b44;
-    --bg: #dd4b4b10;
+    --callout-accent: oklch(0.72 0.13 25);
   }
-
-  // lightened from the light-mode value above for contrast on dark
   &[data-callout="example"] {
-    --color: #9668c7;
-    --border: #9668c744;
-    --bg: #9668c710;
+    --callout-accent: oklch(0.76 0.09 330);
   }
 }
 
 .callout-title {
   display: flex;
-  align-items: flex-start;
-  gap: 5px;
-  padding: 1rem 0;
-  color: var(--color);
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.85rem 0;
+  color: var(--callout-accent);
 
-  --icon-size: 18px;
+  --icon-size: 15px;
 
-  & .fold-callout-icon {
-    transition: transform 0.15s ease;
-    opacity: 0.8;
-    cursor: pointer;
-    --callout-icon: var(--callout-icon-fold);
+  // a hairline under the title separates it from the body (not when the body is folded away)
+  .callout:not(.is-collapsed) > &:has(+ .callout-content) {
+    margin-bottom: 0.85rem;
+    border-bottom: 1px solid color-mix(in srgb, var(--callout-accent) 22%, var(--border));
   }
 
   & > .callout-title-inner > p {
-    color: var(--color);
+    color: color-mix(in srgb, var(--callout-accent) 78%, var(--dark));
     margin: 0;
   }
 
-  .callout-icon,
+  // the icon sits in a small tinted chip, like the icons on the site's cards
+  .callout-icon {
+    position: relative;
+    flex: 0 0 1.75rem;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 8px;
+    background-color: color-mix(in srgb, var(--callout-accent) 18%, transparent);
+
+    &::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-color: var(--callout-accent);
+      mask-image: var(--callout-icon);
+      mask-size: var(--icon-size) var(--icon-size);
+      mask-position: center;
+      mask-repeat: no-repeat;
+    }
+  }
+
   & .fold-callout-icon {
+    --callout-icon: var(--callout-icon-fold);
+    flex: 0 0 var(--icon-size);
     width: var(--icon-size);
     height: var(--icon-size);
-    flex: 0 0 var(--icon-size);
-
-    // icon support
-    background-size: var(--icon-size) var(--icon-size);
-    background-position: center;
-    background-color: var(--color);
+    margin-left: auto;
+    background-color: var(--callout-accent);
     mask-image: var(--callout-icon);
     mask-size: var(--icon-size) var(--icon-size);
     mask-position: center;
     mask-repeat: no-repeat;
-    padding: 0.2rem 0;
+    opacity: 0.8;
+    cursor: pointer;
+    transition: transform 0.15s ease;
   }
 
   .callout-title-inner {

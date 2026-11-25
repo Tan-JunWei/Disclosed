@@ -2,7 +2,7 @@
 tags:
   - Cryptography
   - medium
-  - OneTImePad
+  - OneTimePad
 modified: 2026-08-22T09:33:17+08:00
 ---
 ## Challenge Description

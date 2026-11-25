@@ -1,12 +1,8 @@
 import { QuartzComponent, QuartzComponentConstructor, QuartzComponentProps } from "./types"
-import { classNames } from "../util/lang"
+import { classNames, wrapScript } from "../util/lang"
 
 interface FlexOptions {
   components: QuartzComponent[]
-}
-
-function wrapScript(script?: string): string {
-  return script ? `;(function(){${script}})();` : ""
 }
 
 // renders a set of components on one row, layout arrays otherwise stack each on its own row

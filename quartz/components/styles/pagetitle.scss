@@ -1,10 +1,40 @@
 @use "../../styles/variables.scss" as *;
 
 .page-title {
-  font-size: 1.75rem;
+  font-family: var(--headerFont);
+  font-size: 1.375rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
   margin: 0;
+  display: flex;
+  align-items: center;
+
+  & > a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.625rem;
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+
+  .site-logo {
+    display: block;
+    margin: 0;
+    width: 2.25rem;
+    height: 2.25rem;
+    flex-shrink: 0;
+  }
 
   @media all and (max-width: $fullPageWidth) {
-    font-size: 1.15rem;
+    font-size: 1.125rem;
+
+    & > a {
+      gap: 0.5rem;
+    }
+
+    .site-logo {
+      width: 1.75rem;
+      height: 1.75rem;
+    }
   }
 }

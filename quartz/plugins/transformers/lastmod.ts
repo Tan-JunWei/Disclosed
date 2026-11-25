@@ -1,5 +1,7 @@
 import fs from "fs"
 import path from "path"
+import { execFile } from "child_process"
+import { promisify } from "util"
 import { Repository } from "@napi-rs/simple-git"
 import { QuartzTransformerPlugin } from "../types"
 import chalk from "chalk"
@@ -10,6 +12,34 @@ export interface Options {
 
 const defaultOptions: Options = {
   priority: ["frontmatter", "git", "filesystem"],
+}
+
+const execFileAsync = promisify(execFile)
+const firstCommitCache = new Map<string, Promise<string | undefined>>()
+
+/**
+ * When a file was first added to git, following renames. Quartz's built-in git source only knows the
+ * *latest* commit, so `created` would otherwise fall through to the filesystem birthtime, which is the
+ * checkout time in CI. A frontmatter `date:` still takes priority over this.
+ */
+function firstCommitDate(cwd: string, filePath: string): Promise<string | undefined> {
+  const key = `${cwd}\0${filePath}`
+  let pending = firstCommitCache.get(key)
+  if (!pending) {
+    pending = execFileAsync(
+      "git",
+      ["log", "--follow", "--diff-filter=A", "--format=%aI", "--", filePath],
+      { cwd },
+    )
+      .then(({ stdout }) => {
+        // newest-first, so the last line is the original addition
+        const lines = stdout.split("\n").filter((line) => line.trim().length > 0)
+        return lines.at(-1)
+      })
+      .catch(() => undefined)
+    firstCommitCache.set(key, pending)
+  }
+  return pending
 }
 
 function coerceDate(fp: string, d: any): Date {
@@ -61,6 +91,8 @@ export const CreatedModifiedDate: QuartzTransformerPlugin<Partial<Options>> = (u
                   // or 1+ level higher in case of a submodule/subtree setup
                   repo = Repository.discover(file.cwd)
                 }
+
+                created ||= await firstCommitDate(file.cwd, file.data.filePath!)
 
                 try {
                   modified ||= await repo.getFileLatestModifiedDateAsync(file.data.filePath!)

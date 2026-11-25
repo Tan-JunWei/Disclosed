@@ -1,4 +1,5 @@
 @use "../../styles/variables.scss" as *;
+@use "../../styles/surface.scss" as surface;
 
 // shared by the folder tree (FolderContent) and tag browsing pages (TagContent)
 //
@@ -152,7 +153,6 @@ summary.tree-row:hover {
   font-size: 0.8rem;
   font-variant-numeric: tabular-nums;
   color: var(--gray);
-  opacity: 0.75;
   flex-shrink: 0;
   white-space: nowrap;
 }
@@ -220,38 +220,6 @@ summary.tree-row:hover {
 // chevron sits inside the summary and toggles the native <details> itself
 summary.tree-branch {
   padding: 0.35rem 0.6rem 0.35rem 0.35rem;
-
-  & > a.tree-link {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    min-width: 0;
-    color: inherit;
-    font-weight: inherit;
-  }
-}
-
-// each tag gets its own icon color, hashed from its name, the same
-// per-tag hue used for the colored tag pills elsewhere (see
-// util/tagColor.ts), applied to the icon instead of a pill background
-.tag-color {
-  --tag-l: var(--tag-light-l);
-
-  & .tree-icon {
-    color: hsl(var(--tag-hue) 62% var(--tag-l) / 1);
-  }
-}
-
-:root[saved-theme="dark"] .tag-color {
-  --tag-l: var(--tag-dark-l);
-}
-
-// the "N items with this tag" line on an individual tag page, with that
-// tag's own colored icon leading it
-.tree-tag-summary {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
 }
 
 details[open] > summary.tree-branch > .tree-chevron {
@@ -264,12 +232,6 @@ details[open] > summary.tree-branch > .tree-chevron {
   padding-left: 2.35rem;
 }
 
-// "+N more" link at the end of a truncated preview list
-.tree-more {
-  color: var(--gray);
-  font-style: italic;
-}
-
 @media all and (max-width: $mobileBreakpoint) {
   .tree-root ul {
     padding-left: 1.1rem;
@@ -277,5 +239,189 @@ details[open] > summary.tree-branch > .tree-chevron {
 
   .tree-page .tree-file {
     padding-left: 2rem;
+  }
+}
+
+// ---- tag pages ---------------------------------------------------------------------------------
+
+// A tag page opens with a summary panel tinted in the tag's own colour (the hue its chips use
+// elsewhere): which technique family it belongs to, how many posts use it, and where to go next.
+.tag-summary {
+  @include surface.card-surface(16%);
+  @include surface.card-grid(28%, 100%, 16px, 26%, 0.6);
+  @include surface.tag-accent;
+  @include surface.tag-accent-dark;
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  margin: 0.4rem 0 0;
+  padding: 1rem 1.15rem;
+
+  .tag-summary-icon {
+    display: grid;
+    flex: 0 0 auto;
+    place-items: center;
+    width: 2.6rem;
+    height: 2.6rem;
+    border-radius: 10px;
+    color: var(--card-accent);
+    background-color: color-mix(in srgb, var(--card-accent) 16%, transparent);
+
+    svg {
+      width: 1.25rem;
+      height: 1.25rem;
+    }
+  }
+
+  .tag-summary-text {
+    flex: 1 1 auto;
+    min-width: 0;
+
+    p {
+      margin: 0;
+    }
+  }
+
+  .tag-summary-kicker {
+    color: var(--card-accent);
+    font-size: 0.72rem;
+    font-weight: $semiBoldWeight;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .tag-summary-line {
+    color: var(--darkgray);
+    font-size: 0.95rem;
+
+    strong {
+      color: var(--dark);
+      font-weight: $semiBoldWeight;
+    }
+  }
+
+  .tag-summary-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .tag-summary-link {
+    @include surface.pill-button;
+    background-color: var(--surface);
+    text-decoration: none;
+
+    &:hover,
+    &:focus-visible {
+      border-color: var(--card-accent);
+      background-color: var(--card-accent);
+      color: var(--light);
+    }
+  }
+}
+
+.tag-posts {
+  margin-top: 1.1rem;
+}
+
+.tag-other-pages {
+  margin-top: 1.1rem;
+}
+
+// Tag index: tags grouped by technique family, one compact card per tag
+.tag-index-intro {
+  color: var(--darkgray);
+}
+
+.tag-group {
+  margin-top: 1.8rem;
+}
+
+.tag-group-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 0.7rem;
+  font-size: 1.05rem;
+
+  .tag-group-count {
+    @include surface.pill-chip;
+    font-family: var(--bodyFont);
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.tag-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(11.5rem, 100%), 1fr));
+  gap: 0.7rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    margin: 0;
+    padding: 0;
+  }
+}
+
+// `.internal` is in the selector because the global internal-link style (a highlight background,
+// small padding and line height) would otherwise paint over the card
+a.internal.tag-card {
+  @include surface.card-surface(7%);
+  // the grid stays a small patch in the corner, as on every other card
+  @include surface.card-grid(30%, 100%, 12px, 24%, 0.45);
+  @include surface.card-interactive(2px);
+  @include surface.tag-accent;
+  @include surface.tag-accent-dark;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 0.1rem 0.6rem;
+  padding: 0.7rem 0.9rem;
+  color: var(--dark);
+  font-weight: $semiBoldWeight;
+  line-height: 1.35;
+  text-decoration: none;
+
+  .tag-card-icon {
+    display: grid;
+    grid-row: span 2;
+    place-items: center;
+    width: 1.8rem;
+    height: 1.8rem;
+    border-radius: 8px;
+    color: var(--card-accent);
+    background-color: color-mix(in srgb, var(--card-accent) 17%, transparent);
+
+    svg {
+      width: 0.95rem;
+      height: 0.95rem;
+    }
+  }
+
+  .tag-card-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.88rem;
+  }
+
+  .tag-card-count {
+    font-size: 0.72rem;
+    font-weight: $normalWeight;
+    color: var(--gray);
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@media all and (max-width: $mobileBreakpoint) {
+  .tag-summary {
+    flex-wrap: wrap;
+
+    .tag-summary-links {
+      flex-basis: 100%;
+    }
   }
 }

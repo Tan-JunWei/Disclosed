@@ -1,0 +1,41 @@
+==============================================================================
+                     D I S K L O C K   v1.0   (SHAREWARE)
+              (C) 1991 Brightstar Software Ltd.  All rights reserved.
+==============================================================================
+
+ Thank you for trying DISKLOCK, the FASTEST file protection utility for your
+ IBM PC/XT/AT or 100% compatible!
+
+ WHAT IS DISKLOCK?
+ -----------------
+ DISKLOCK keeps your private files safe from nosy coworkers, siblings and
+ spies. Locked files are completely unreadable without your password.
+
+ DISKLOCK uses our exclusive XOR-CRYPT(tm) technology. Every single byte of
+ your file is combined with your password, over and over, from the first
+ byte to the last. Because XOR-CRYPT(tm) does not compress or pad your data,
+ a locked file is EXACTLY the same size as the original. No wasted disk
+ space!
+
+ USAGE
+ -----
+     DISKLOCK LOCK   <file>        Locks <file>, creates <name>.LCK
+     DISKLOCK UNLOCK <file.LCK>    Unlocks a file
+
+ You will be asked for a password. Passwords must be EXACTLY 8 characters
+ long (same as a DOS file name - easy to remember!).
+
+ Every operation is recorded in DISKLOCK.LOG for your convenience.
+
+ IS IT SECURE?
+ -------------
+ With 8 characters there are over 7,000,000,000,000,000,000 possible
+ passwords. Even a fast 25 MHz 386 trying one million passwords per second
+ would need more than 200,000 years to try them all!
+
+ REGISTRATION
+ ------------
+ If you find DISKLOCK useful, please send $15 to Brightstar Software to
+ receive the registered version, which removes this message and adds
+ support for 3.5" HD disks.
+==============================================================================

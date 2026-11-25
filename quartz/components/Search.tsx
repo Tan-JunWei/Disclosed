@@ -4,6 +4,7 @@ import style from "./styles/search.scss"
 import script from "./scripts/search.inline"
 import { classNames } from "../util/lang"
 import { i18n } from "../i18n"
+import { lazyModuleSrc } from "../util/resources"
 
 export interface SearchOptions {
   enablePreview: boolean
@@ -14,22 +15,35 @@ const defaultOptions: SearchOptions = {
 }
 
 export default ((userOpts?: Partial<SearchOptions>) => {
-  const Search: QuartzComponent = ({ displayClass, cfg }: QuartzComponentProps) => {
+  const Search: QuartzComponent = ({ displayClass, cfg, ctx, fileData }: QuartzComponentProps) => {
     const opts = { ...defaultOptions, ...userOpts }
     const searchPlaceholder = i18n(cfg.locale).components.search.searchBarPlaceholder
     return (
       <div class={classNames(displayClass, "search")}>
-        <button class="search-button" id="search-button">
-          <p>{i18n(cfg.locale).components.search.title}</p>
-          <svg role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 19.9 19.7">
-            <title>Search</title>
-            <g class="search-path" fill="none">
-              <path stroke-linecap="square" d="M18.5 18.3l-5.4-5.4" />
-              <circle cx="8" cy="8" r="7" />
+        <button
+          type="button"
+          class="search-button"
+          id="search-button"
+          aria-label={`${i18n(cfg.locale).components.search.title} Ctrl K`}
+          aria-controls="search-container"
+          aria-expanded="false"
+          aria-keyshortcuts="Control+K Meta+K"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
+            <g class="search-path" fill="none" stroke-linecap="round">
+              <circle cx="10.5" cy="10.5" r="6.5" />
+              <path d="m16 16 4.5 4.5" />
             </g>
           </svg>
+          <span class="search-label">{i18n(cfg.locale).components.search.title}</span>{" "}
+          <kbd class="search-shortcut" aria-hidden="true">
+            <span class="search-shortcut-mod">Ctrl</span> <span>K</span>
+          </kbd>
         </button>
-        <div id="search-container">
+        <div
+          id="search-container"
+          data-module-src={lazyModuleSrc(fileData.slug!, ctx.buildId, "search-engine")}
+        >
           <div id="search-space">
             <input
               autocomplete="off"
@@ -39,6 +53,9 @@ export default ((userOpts?: Partial<SearchOptions>) => {
               aria-label={searchPlaceholder}
               placeholder={searchPlaceholder}
             />
+            <button type="button" id="search-close" aria-label="Close search">
+              ×
+            </button>
             <div id="search-layout" data-preview={opts.enablePreview}></div>
           </div>
         </div>

@@ -1,87 +1,31 @@
-# CTF Writeups
-Welcome to my Capture The Flag (CTF) writeup repository! Here you'll find detailed explanations and solutions to various CTF challenges I've tackled.
+# Disclosed
 
-> Click &#9733; if you like this project! Really appreciate it!
+[Disclosed](https://disclosed.nepz.dev/) is my cybersecurity blog. I write about CTF challenges I've solved and created, my HackTheBox Sherlocks investigations, and vulnerabilities I've found in open-source software.
 
-## Contents
+![Disclosed homepage with the site introduction and post statistics](docs/screenshots/home.webp)
 
-<div align="center">
-  <img align="center" width="700" src="content/Assets/Readme Contents.png" alt="Home Page Example" />
-  <h4>Landing Page</h4>
-</div>
+## Browse the blog
 
-- **Challenges**: Organized by category (e.g., Forensics, Cryptography, OSINT, Web Exploitation), each challenge writeup includes a step-by-step guide on how to approach and solve the problem. These writeups cover the thought process, tools used, methodologies applied, and lessons learned.
-	- I've also recently started documenting some original challenges that I've created! You can find them here: [Original Challenges](https://tan-junwei.github.io/CTF-Writeups/Challenge-Creation/CTF-Challenges-I've-Created)
-- **Relevant resources**: Provides further explanations of the concepts, tools, or techniques used to solve challenges. If applicable, sources are linked at the bottom of each challenge for personal reading.
+- [Explore](https://disclosed.nepz.dev/Explore) searches all published posts and filters by section, category, difficulty, severity, technique, and tag.
+- [CTF Writeups](https://disclosed.nepz.dev/CTF-Writeups) contains my picoCTF and HNF26 writeups.
+- [HackTheBox Sherlocks](https://disclosed.nepz.dev/HackTheBox/HackTheBox-Sherlocks) covers my investigations from retired Sherlocks.
+- [Self-Created](https://disclosed.nepz.dev/Challenge-Creation/CTF-Challenges-I've-Created) collects the challenges I've created and their solutions.
+- [Vulnerability Research](https://disclosed.nepz.dev/Vulnerability-Research/Vulnerability-Research) documents the vulnerabilities I've reported, with links to advisories, CVE records, and fixes when available.
 
-## Statistics Dashboard
-<div align="center">
-  <img align="center" width="700" src="content/Assets/Readme Stats.png" alt="Statistics" />
-  <h4>Statistics</h4>
-</div>
+![Explore page with search, filters, sorting, and post cards](docs/screenshots/explore.webp)
 
-The landing page features a dashboard that automatically summarises the entire repository, so it always reflects the current state of the repository as new writeups are added:
-- **Quick Overview**: Total writeup count, number of categories, distinct techniques tagged, and how many self-created challenges are documented.
-- **Writeups Over Time**: A running total of writeups published, so growth over time is easily understandable.
-- **Difficulty Distribution**: A breakdown of how challenges split across difficulty levels, from Beginner to Hard.
-- **Category Distribution**: A breakdown of writeups by category (e.g. Forensics, Cryptography, Infra Hacking).
-- **Skills & Competencies**: A radar chart giving a self-assessment across a handful of CTF skill areas. 
+The homepage displays build-time post counts, difficulty and severity charts, and recent posts. The sidebar provides site-wide search and a theme switcher. The graph, backlinks, and table of contents help readers navigate related material.
 
-## Challenge Writeups
-<div align="center">
-  <img align="center" width="700" src="content/Assets/Readme Challenge Example.png" alt="Challenge Example" />
-  <h4>Challenge Example</h4>
-</div>
+## Publish a post
 
-Each challenge will feature a set of tags at the top, highlighting categories like "Forensics." These tags serve to offer a clear indication of the challenge's focus area, and also aid in navigation between challenges, which will be explained below. 
+Write posts as Markdown in `content/<Section>/<Category>/`. Put linked media in `content/Assets/` and use `draft: true` to exclude a work in progress from the site.
 
-The writeup contents are purposefully separated into bite-sized, digestible sections, which will be listed in the **Table of Contents** by the side. It also effectively illustrates the entire thought process for addressing the challenge.
+- CTF writeups use a difficulty tag such as `easy`, `medium`, or `hard`.
+- Research posts can use the [vulnerability writeup template](Templates/Vulnerability%20Writeup.md). The post header and overview use its advisory, CVE, CVSS, and remediation fields when provided.
+- Add new sections to the [section registry](quartz/util/sections.ts) so they appear on the dashboard and in Explore. The [technique registry](quartz/util/techniques.ts) maps tags to technique filters.
 
-> [!IMPORTANT]\
-> The estimated reading time for each challenge writeup is provided at the top as an indicator of how long the content will take to read. This helps to set clear expectations about the duration of the content.
-
-## Explore Writeups Page
-<div align="center">
-  <img align="center" width="700" src="content/Assets/Readme Explore Writeups.png" alt="Explore Writeups" />
-  <h4>Explore Writeups</h4>
-</div>
-
-The [Explorer](https://tan-junwei.github.io/CTF-Writeups/Explore) page brings every writeup together in one searchable, filterable view instead of having to dig through folders. It supports:
-- **Search**: Free-text search across writeup titles, categories, and tags.
-- **Filters**: Filter chips for platform, category, difficulty, and tag, any combination of which can be active at once.
-- **Sorting**: Newest, oldest, name, or difficulty.
-
-## Graph View Visualization
-
-<div align="center">
-  <img align="center" width="600" src="content/Assets/Readme Graph View.png" alt="Graph View" />
-  <h4>Graph View</h4>
-</div>
-
-The **Graph View** provides an interactive way to explore the relationships between challenges, concepts, tools, and techniques. It offers a visual map that can help you see how different components are connected:
-- **Circles (Nodes)**: Each circle represents a node, which can be a challenge, concept, tool, or tag. Tags allow easier navigation between similar challenges (E.g. Clicking the `#medium` tag allows you to browse challenges in that difficulty category.)
-- **Lines (Links)**: The lines between nodes present internal links, showcasing how these elements are interconnected. 
-By using this visualization, you can gain a deeper understanding of the strategies used across multiple challenges, identify common tools or techniques, and explore how different concepts are interlinked.
-
-## The Ongoing Journey
-As I continue to explore and glean deeper insights, this project will remain a living document, constantly evolving and improving. Regular updates will be made to refine the content, introduce fresh perspectives, and integrate the latest knowledge. Stay tuned for ongoing enhancements!
-
-## Site Navigation
-Visit this [website](https://tan-junwei.github.io/CTF-Writeups/) to check out this project!
-
-### Navigation
-
-#### PicoCTF
-- [All Writeups](https://tan-junwei.github.io/CTF-Writeups/PicoCTF/PicoCTF-Writeups)
-- [Forensics](https://tan-junwei.github.io/CTF-Writeups/PicoCTF/Forensics/)
-- [Cryptography](https://tan-junwei.github.io/CTF-Writeups/PicoCTF/Cryptography/)
-- [General Skills](https://tan-junwei.github.io/CTF-Writeups/tags/GeneralSkills) 
-
-### Challenge Creation (CTF Challenges I've Created)
-- [CTF Challenges I've Created](https://tan-junwei.github.io/CTF-Writeups/Challenge-Creation/CTF-Challenges-I've-Created)
-
-## Contributions
-Contribution are always welcome! If you'd like the suggest improvements, feel free to submit a pull request or open an issue. I'd love to hear feedback and improvements about my work!
+For the displayed post date, set `date` in frontmatter. Quartz uses the file's first Git commit when that field is absent.
 
 ## License
-This repository is licensed under the MIT License. Feel free to use, modify, and distribute the content with proper attribution.
+
+The writing in `content/` is licensed under [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/). The site code is built on [Quartz](https://github.com/jackyzha0/quartz) and is available under the [MIT License](LICENSE.txt).

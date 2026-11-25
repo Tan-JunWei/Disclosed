@@ -1,0 +1,162 @@
+@use "./variables.scss" as *;
+
+// The site's card design system, lifted from the homepage "Start exploring" cards so every surface
+// shares one look: a rounded panel, a soft accent wash fading in from the top-right corner, a fine
+// grid texture in that same corner (never behind the whole card), and a lift + accent edge on hover.
+//
+// A card sets its own accent with `--card-accent`. Everything below derives from it, so one rule
+// recolours the border, wash, grid and glow together, in light and dark themes alike.
+
+// The panel itself. `$wash` is how strong the accent wash is at the corner.
+@mixin card-surface($wash: 20%, $radius: 14px) {
+  --card-accent: var(--secondary);
+  position: relative;
+  border: 1px solid var(--border);
+  border-radius: $radius;
+  background: linear-gradient(
+      225deg,
+      color-mix(in srgb, var(--card-accent) $wash, transparent),
+      transparent 65%
+    ),
+    var(--surface);
+  box-shadow: var(--surface-shadow);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+// The grid texture: a patch of fine lines in the top-right corner, faded out with a mask.
+@mixin card-grid($width: 70%, $height: 75%, $size: 20px, $line: 38%, $opacity: 0.85) {
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    z-index: -1;
+    width: $width;
+    height: $height;
+    background-image: linear-gradient(
+        color-mix(in srgb, var(--card-accent) $line, transparent) 1px,
+        transparent 1px
+      ),
+      linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--card-accent) $line, transparent) 1px,
+        transparent 1px
+      );
+    background-size: $size $size;
+    background-position: right top;
+    -webkit-mask-image: radial-gradient(circle at 100% 0%, #000 0%, transparent 70%);
+    mask-image: radial-gradient(circle at 100% 0%, #000 0%, transparent 70%);
+    opacity: $opacity;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+  }
+}
+
+// Hover/focus for a card that is a link: lift, accent edge, soft accent glow, brighter grid.
+@mixin card-interactive($lift: 3px) {
+  transition:
+    border-color 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+
+  &:hover,
+  &:focus-visible {
+    border-color: var(--card-accent);
+    transform: translateY(-$lift);
+    box-shadow: 0 12px 30px -14px color-mix(in srgb, var(--card-accent) 60%, transparent);
+
+    &::before {
+      opacity: 1;
+    }
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--card-accent);
+    outline-offset: 2px;
+  }
+}
+
+// A tinted pill, for tags and meta chips inside a card.
+@mixin pill-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.12rem 0.55rem;
+  border-radius: 999px;
+  background-color: color-mix(in srgb, var(--darkgray) 7%, transparent);
+  color: var(--darkgray);
+  font-size: 0.7rem;
+  white-space: nowrap;
+}
+
+// An outlined pill button that fills with the card's accent when its card is hovered.
+@mixin pill-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.36rem 0.8rem;
+  border: 1px solid color-mix(in srgb, var(--card-accent) 45%, var(--border));
+  border-radius: 999px;
+  color: var(--card-accent);
+  font-size: 0.74rem;
+  font-weight: $semiBoldWeight;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+// A rounded input/button control sharing the same pill silhouette and accent focus ring.
+@mixin pill-control {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background-color: var(--surface);
+  box-shadow: var(--surface-shadow);
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+
+  &:hover {
+    border-color: var(--secondary);
+  }
+}
+
+// Accent derived from a tag hue (the `--tag-*` vars come from `tagColorVars`).
+@mixin tag-accent {
+  --tag-l: calc(var(--tag-light-l) - 3%);
+  --card-accent: hsl(var(--tag-hue) 62% var(--tag-l));
+}
+
+@mixin tag-accent-dark {
+  :root[saved-theme="dark"] & {
+    --tag-l: var(--tag-dark-l);
+  }
+}
+
+// A writeup card is washed in two colours: its rating (difficulty or severity) leads from the corner,
+// and its category (tag) colour takes over across the middle, so no two combinations look the same.
+// The card needs `tagColorVars(...)` inline and `data-hue` set to the rating's hue. Without a rating it
+// falls back to the tag colour alone. The rating colour also drives the grid texture and hover edge.
+@mixin rated-card($rating: 6%, $tag: 3.5%) {
+  --tag-l: calc(var(--tag-light-l) - 3%);
+  --card-tag: hsl(var(--tag-hue) 62% var(--tag-l));
+  --card-accent: var(--card-rating, var(--card-tag));
+  background: linear-gradient(
+      225deg,
+      color-mix(in srgb, var(--card-accent) $rating, transparent) 0%,
+      color-mix(in srgb, var(--card-tag) $tag, transparent) 55%,
+      transparent 100%
+    ),
+    var(--surface);
+
+  :root[saved-theme="dark"] & {
+    --tag-l: var(--tag-dark-l);
+  }
+
+  @each $level in beginner, easy, medium, hard, insane, expert {
+    &[data-hue="#{$level}"] {
+      --card-rating: var(--diff-#{$level}-fill);
+    }
+  }
+}

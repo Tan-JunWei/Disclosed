@@ -1,4 +1,6 @@
 import { FilePath, joinSegments, slugifyFilePath } from "../../util/path"
+import { attachmentOutputPath, unpublishableAttachments } from "../../util/attachments"
+import chalk from "chalk"
 import { QuartzEmitterPlugin } from "../types"
 import path from "path"
 import fs from "fs"
@@ -36,14 +38,23 @@ export const Assets: QuartzEmitterPlugin = () => {
 
       return graph
     },
-    async emit({ argv, cfg }, _content, _resources): Promise<FilePath[]> {
+    async emit({ argv, cfg, buildId }, _content, _resources): Promise<FilePath[]> {
       const assetsPath = argv.output
       const fps = await filesToCopy(argv, cfg)
+      const unavailable = await unpublishableAttachments(
+        buildId,
+        argv.directory,
+        cfg.configuration.ignorePatterns,
+      )
       const res: FilePath[] = []
       for (const fp of fps) {
-        const ext = path.extname(fp)
         const src = joinSegments(argv.directory, fp) as FilePath
-        const name = (slugifyFilePath(fp as FilePath, true) + ext) as FilePath
+        const name = attachmentOutputPath(fp) as FilePath
+        // links to these are marked unavailable by the UnavailableAttachments transformer
+        if (unavailable.has(name)) {
+          console.log(chalk.yellow(`Not published (too large, or not fetched from Git LFS): ${fp}`))
+          continue
+        }
 
         const dest = joinSegments(assetsPath, name) as FilePath
         const dir = path.dirname(dest) as FilePath

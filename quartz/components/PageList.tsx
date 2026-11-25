@@ -3,7 +3,7 @@ import { QuartzPluginData } from "../plugins/vfile"
 import { Date, getDate } from "./Date"
 import { QuartzComponent, QuartzComponentProps } from "./types"
 import { GlobalConfiguration } from "../cfg"
-import { colorForTag } from "../util/tagColor"
+import { tagColorVars } from "../util/tagColor"
 
 export type SortFn = (f1: QuartzPluginData, f2: QuartzPluginData) => number
 
@@ -60,12 +60,7 @@ export const PageList: QuartzComponent = ({ cfg, fileData, allFiles, limit, sort
               </div>
               <ul class="tags">
                 {tags.map((tag) => {
-                  const { hue, lightL, darkL } = colorForTag(tag)
-                  const style = {
-                    ["--tag-hue" as any]: hue,
-                    ["--tag-light-l" as any]: `${lightL}%`,
-                    ["--tag-dark-l" as any]: `${darkL}%`,
-                  }
+                  const style = tagColorVars(tag)
                   return (
                     <li>
                       <a

@@ -1,14 +1,42 @@
 @use "../../styles/variables.scss" as *;
 
 .graph {
+  // Posts take their section's colour, matching the accents of the home page cards: picoCTF
+  // crimson, HNF26 blue, HackTheBox lime, self-created violet and research red. Landing pages and
+  // tags stay neutral, so the coloured clusters read as the content. Edges are a hairline tinted
+  // towards the accent, quiet enough that the nodes carry the picture.
+  --graph-bg: var(--surface);
+  --graph-edge: color-mix(
+    in srgb,
+    color-mix(in srgb, var(--secondary) 40%, var(--gray)) 28%,
+    transparent
+  );
+  --graph-node: var(--darkgray);
+  --graph-node-tag: var(--gray);
+  // links of a hovered neutral page (a landing page or tag) take the site accent
+  --graph-edge-active: var(--secondary);
+  --graph-node-pico: hsl(348 64% 47%);
+  --graph-node-hnf: hsl(203 82% 40%);
+  --graph-node-htb: hsl(84 62% 33%);
+  --graph-node-creation: var(--tertiary);
+  --graph-node-research: hsl(7 66% 50%);
+  // the panel: a faint dot grid (the cards' grid motif) under a soft glow of the accent
+  --graph-dots: color-mix(in srgb, var(--gray) 16%, transparent);
+  --graph-glow: color-mix(in srgb, var(--secondary) 9%, transparent);
+
   & > h3 {
     font-size: 1rem;
     margin: 0;
   }
 
   & > .graph-outer {
-    border-radius: 5px;
+    border-radius: 14px;
     border: 1px solid var(--border);
+    box-shadow: var(--surface-shadow);
+    background:
+      radial-gradient(ellipse at 50% 45%, var(--graph-glow), transparent 70%),
+      radial-gradient(circle, var(--graph-dots) 1px, transparent 1.4px) 0 0 / 16px 16px,
+      var(--graph-bg);
     box-sizing: border-box;
     height: 250px;
     margin: 0.5em 0;
@@ -17,16 +45,23 @@
 
     & > #global-graph-icon {
       color: var(--dark);
-      opacity: 0.5;
-      width: 18px;
-      height: 18px;
+      width: 32px;
+      height: 32px;
       position: absolute;
       padding: 0.2rem;
       margin: 0.3rem;
       top: 0;
       right: 0;
       border-radius: 4px;
-      background-color: transparent;
+      background-color: var(--graph-bg);
+      border: 0;
+      display: grid;
+      place-items: center;
+      z-index: 1;
+      svg {
+        width: 18px;
+        height: 18px;
+      }
       transition: background-color 0.5s ease;
       cursor: pointer;
       &:hover {
@@ -50,10 +85,14 @@
       display: inline-block;
     }
 
-    & > #global-graph-container {
+    & > #global-graph-dialog {
       border: 1px solid var(--border);
-      background-color: var(--light);
-      border-radius: 5px;
+      background:
+        radial-gradient(ellipse at 50% 45%, var(--graph-glow), transparent 70%),
+        radial-gradient(circle, var(--graph-dots) 1px, transparent 1.4px) 0 0 / 20px 20px,
+        var(--graph-bg);
+      border-radius: 12px;
+      box-shadow: 0 12px 36px rgb(0 0 0 / 16%);
       box-sizing: border-box;
       position: fixed;
       top: 50%;
@@ -66,5 +105,86 @@
         width: 90%;
       }
     }
+  }
+}
+
+#global-graph-close {
+  position: absolute;
+  z-index: 1;
+  top: 0.6rem;
+  right: 0.6rem;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--surface);
+  color: var(--darkgray);
+  font: inherit;
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+  // hover raises contrast and does not recolour the glyph to the accent
+  &:hover {
+    background: var(--highlight);
+    color: var(--dark);
+  }
+}
+
+#global-graph-container {
+  width: 100%;
+  height: 100%;
+}
+
+.graph .node:focus-visible {
+  outline: none;
+  stroke: var(--secondary);
+  stroke-width: 3px;
+}
+
+// Labels sit over the lines, so they get a halo in the panel colour to stay readable. Their opacity
+// is driven by the zoom level and by hover in graph.inline.ts, so there is deliberately no CSS
+// transition here (it would lag behind every zoom step).
+.graph text {
+  fill: var(--darkgray);
+  paint-order: stroke;
+  stroke: var(--graph-bg);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+// A page you have not opened yet keeps its colour but is drawn paler. Hover and focus fade nodes
+// with `opacity`, so this uses `fill-opacity` and the two combine.
+.graph .node.is-unvisited {
+  fill-opacity: 0.55;
+}
+
+// The dark panel needs lighter, brighter versions of each colour to hold the same contrast, and a
+// stronger glow so the panel has some depth instead of reading as a flat slab.
+:root[saved-theme="dark"] .graph {
+  --graph-node: color-mix(in srgb, var(--darkgray) 82%, var(--graph-bg));
+  --graph-node-pico: hsl(350 72% 66%);
+  --graph-node-hnf: hsl(203 78% 64%);
+  --graph-node-htb: hsl(84 58% 56%);
+  --graph-node-research: hsl(9 76% 64%);
+  --graph-edge: color-mix(
+    in srgb,
+    color-mix(in srgb, var(--secondary) 45%, var(--gray)) 34%,
+    transparent
+  );
+  --graph-dots: color-mix(in srgb, var(--gray) 13%, transparent);
+  --graph-glow: color-mix(in srgb, var(--secondary) 13%, transparent);
+}
+
+// a shadow on a dark page is nearly invisible, so the dialog gets a stronger one to lift it off
+:root[saved-theme="dark"] .graph > #global-graph-outer > #global-graph-dialog {
+  box-shadow: 0 16px 48px rgb(0 0 0 / 55%);
+}
+
+@media (pointer: coarse) {
+  .graph .graph-outer > #global-graph-icon {
+    width: 44px;
+    height: 44px;
+    margin: 0.2rem;
   }
 }

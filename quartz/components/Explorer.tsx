@@ -3,9 +3,13 @@ import explorerStyle from "./styles/explorer.scss"
 
 // @ts-ignore
 import script from "./scripts/explorer.inline"
-import { ExplorerNode, FileNode, Options } from "./ExplorerNode"
+import { arrangeOverviews, ExplorerNode, FileNode, Options } from "./ExplorerNode"
 import { QuartzPluginData } from "../plugins/vfile"
 import { classNames } from "../util/lang"
+import { buildPostEntries } from "../util/posts"
+import { SECTION_LANDINGS } from "../util/sections"
+import { FullSlug, resolveRelative, simplifySlug } from "../util/path"
+import { GlobalConfiguration } from "../cfg"
 import { i18n } from "../i18n"
 
 // Options interface defined in `ExplorerNode` to avoid circular dependency
@@ -44,12 +48,16 @@ export default ((userOpts?: Partial<Options>) => {
   // memoized
   let fileTree: FileNode
   let jsonTree: string
+  let totalPosts = 0
   let lastBuildId: string = ""
 
-  function constructFileTree(allFiles: QuartzPluginData[]) {
+  function constructFileTree(allFiles: QuartzPluginData[], cfg: GlobalConfiguration) {
     // Construct tree from allFiles
     fileTree = new FileNode("")
     allFiles.forEach((file) => fileTree.add(file))
+    // "Explore posts" is the main discovery tool, so it is pinned above the tree instead of
+    // sitting in it as if it were one more post
+    fileTree.children = fileTree.children.filter((child) => child.file?.slug !== "Explore")
 
     // Execute all functions (sort, filter, map) that were provided (if none were provided, only default "sort" is applied)
     if (opts.order) {
@@ -66,6 +74,19 @@ export default ((userOpts?: Partial<Options>) => {
       }
     }
 
+    arrangeOverviews(fileTree, new Set<string>(SECTION_LANDINGS))
+
+    const postEntries = buildPostEntries(cfg, allFiles)
+    totalPosts = postEntries.length
+    const postSlugs = new Set(postEntries.map((entry) => entry.slug))
+    function count(node: FileNode): number {
+      node.postCount =
+        (node.file?.slug && postSlugs.has(node.file.slug) ? 1 : 0) +
+        node.children.reduce((sum, child) => sum + count(child), 0)
+      return node.postCount
+    }
+    count(fileTree)
+
     // Get all folders of tree. Initialize with collapsed state
     // Stringify to pass json tree as data attribute ([data-tree])
     const folders = fileTree.getFolderPaths(opts.folderDefaultState === "collapsed")
@@ -81,11 +102,12 @@ export default ((userOpts?: Partial<Options>) => {
   }: QuartzComponentProps) => {
     if (ctx.buildId !== lastBuildId) {
       lastBuildId = ctx.buildId
-      constructFileTree(allFiles)
+      constructFileTree(allFiles, cfg)
     }
 
+    const onExplore = simplifySlug(fileData.slug!) === "Explore"
     return (
-      <div class={classNames(displayClass, "explorer")}>
+      <nav aria-label="Posts" class={classNames(displayClass, "explorer")}>
         <button type="button" id="explorer-close" aria-label="Close file explorer">
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -109,9 +131,11 @@ export default ((userOpts?: Partial<Options>) => {
           data-savestate={opts.useSavedState}
           data-tree={jsonTree}
           aria-controls="explorer-content"
-          aria-expanded={opts.folderDefaultState === "open"}
+          aria-expanded="true"
         >
-          <h2>{opts.title ?? i18n(cfg.locale).components.explorer.title}</h2>
+          <span class="explorer-title">
+            {opts.title ?? i18n(cfg.locale).components.explorer.title}
+          </span>
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="14"
@@ -128,12 +152,36 @@ export default ((userOpts?: Partial<Options>) => {
           </svg>
         </button>
         <div id="explorer-content">
-          <ul class="overflow" id="explorer-ul">
-            <ExplorerNode node={fileTree} opts={opts} fileData={fileData} />
-            <li id="explorer-end" />
-          </ul>
+          <div class="explorer-body">
+            <a
+              class={`explorer-pin${onExplore ? " active" : ""}`}
+              href={resolveRelative(fileData.slug!, "Explore" as FullSlug)}
+              aria-current={onExplore ? "page" : undefined}
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <path d="m16.24 7.76-2.12 6.36-6.36 2.12 2.12-6.36 6.36-2.12z" />
+              </svg>
+              <span class="explorer-name">Explore posts</span>
+              <span class="folder-count">
+                {totalPosts}
+                <span class="explorer-sr"> posts</span>
+              </span>
+            </a>
+            <ul class="overflow" id="explorer-ul">
+              <ExplorerNode node={fileTree} opts={opts} fileData={fileData} />
+            </ul>
+          </div>
         </div>
-      </div>
+      </nav>
     )
   }
 

@@ -1,6 +1,7 @@
 ---
-title: Explore Writeups
+title: Explore
 showTags: false
 modified: 2026-08-22T09:33:17+08:00
 ---
-Every writeup on this site in one place: picoCTF solves and the challenges I've built myself. Search by name, or filter by category, difficulty, platform, and tag.
+
+Search posts by title or CVE. Use filters to narrow the results by section, category, difficulty, severity, technique, or tag.

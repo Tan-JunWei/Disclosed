@@ -1,0 +1,243 @@
+@use "./variables.scss" as *;
+@use "./surface.scss" as surface;
+
+// The post card (`PostCard.tsx`): one writeup or research post with its category, rating, summary
+// and tags. It is shown on the Explore page, the section pages and the tag pages, so it lives here
+// rather than with any one of them.
+
+// Semantic difficulty ramp, shared by the discovery cards/chips and the homepage donut+legend
+:root {
+  // One ramp for both scales (severity borrows difficulty's colours, see SEVERITY_HUE). It follows a
+  // risk gauge: blue (low) -> green -> yellow-amber (medium) -> orange (high) -> crimson (critical).
+  // Low is blue rather than green so it can never be mistaken for the green Remediation boxes.
+  --diff-beginner: hsl(199 78% 32%);
+  --diff-easy: hsl(146 62% 28%);
+  --diff-medium: hsl(40 94% 28%);
+  --diff-hard: hsl(21 86% 38%);
+  --diff-insane: hsl(352 70% 38%);
+  --diff-expert: hsl(0 0% 20%);
+
+  // vivid fills for shapes (dots, squares, donut). The tokens above are deeper, for small text.
+  --diff-beginner-fill: hsl(199 80% 46%);
+  --diff-easy-fill: hsl(146 55% 42%);
+  --diff-medium-fill: hsl(44 96% 48%);
+  --diff-hard-fill: hsl(23 92% 52%);
+  --diff-insane-fill: hsl(352 72% 47%);
+  --diff-expert-fill: hsl(0 0% 42%);
+
+  // Illustration accents stay fixed across themes, matching the brighter dark-mode palette.
+  --diff-beginner-artwork: hsl(199 78% 63%);
+  --diff-easy-artwork: hsl(146 55% 58%);
+  --diff-medium-artwork: hsl(44 92% 60%);
+  --diff-hard-artwork: hsl(23 92% 63%);
+  --diff-insane-artwork: hsl(352 74% 63%);
+  --diff-expert-artwork: hsl(0 0% 78%);
+}
+
+:root[saved-theme="dark"] {
+  --diff-beginner: hsl(199 80% 64%);
+  --diff-easy: hsl(146 55% 58%);
+  --diff-medium: hsl(44 92% 62%);
+  --diff-hard: hsl(23 92% 64%);
+  --diff-insane: hsl(352 76% 66%);
+  --diff-expert: hsl(0 0% 78%);
+
+  --diff-beginner-fill: hsl(199 80% 64%);
+  --diff-easy-fill: hsl(146 55% 58%);
+  --diff-medium-fill: hsl(44 92% 62%);
+  --diff-hard-fill: hsl(23 92% 64%);
+  --diff-insane-fill: hsl(352 76% 66%);
+  --diff-expert-fill: hsl(0 0% 78%);
+}
+
+.wc-grid[hidden] {
+  display: none;
+}
+
+.wc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(255px, 100%), 1fr));
+  gap: 0.85rem;
+  margin-top: 1.4rem;
+}
+
+.wc-card[hidden] {
+  display: none;
+}
+
+.wc-card {
+  @include surface.card-surface(14%);
+  @include surface.card-grid(62%, 68%, 18px, 15%, 0.65);
+  @include surface.card-interactive;
+  @include surface.rated-card;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 1.05rem 1.15rem;
+  text-decoration: none;
+  font-weight: $normalWeight;
+}
+
+.wc-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.wc-category {
+  --tag-l: calc(var(--tag-light-l) - 3%);
+  --tag-color: hsl(var(--tag-hue) 62% var(--tag-l) / 1);
+  --tag-bg: hsl(var(--tag-hue) 62% var(--tag-l) / 0.14);
+
+  color: var(--tag-color);
+  background-color: var(--tag-bg);
+  border-radius: 999px;
+  padding: 0.14rem 0.6rem;
+  font-size: 0.7rem;
+  font-weight: $semiBoldWeight;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+:root[saved-theme="dark"] .wc-category {
+  --tag-l: var(--tag-dark-l);
+}
+
+.wc-diff {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.7rem;
+  color: var(--gray);
+  text-transform: capitalize;
+  white-space: nowrap;
+}
+
+.wc-diff-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background-color: var(--gray);
+  flex-shrink: 0;
+}
+
+.wc-diff[data-diff="beginner"] {
+  color: var(--diff-beginner);
+}
+.wc-diff[data-diff="beginner"] .wc-diff-dot {
+  background-color: var(--diff-beginner);
+}
+.wc-diff[data-diff="easy"] {
+  color: var(--diff-easy);
+}
+.wc-diff[data-diff="easy"] .wc-diff-dot {
+  background-color: var(--diff-easy);
+}
+.wc-diff[data-diff="medium"] {
+  color: var(--diff-medium);
+}
+.wc-diff[data-diff="medium"] .wc-diff-dot {
+  background-color: var(--diff-medium);
+}
+.wc-diff[data-diff="hard"] {
+  color: var(--diff-hard);
+}
+.wc-diff[data-diff="hard"] .wc-diff-dot {
+  background-color: var(--diff-hard);
+}
+.wc-diff[data-diff="insane"] {
+  color: var(--diff-insane);
+}
+.wc-diff[data-diff="insane"] .wc-diff-dot {
+  background-color: var(--diff-insane);
+}
+.wc-diff[data-diff="expert"] {
+  color: var(--diff-expert);
+}
+.wc-diff[data-diff="expert"] .wc-diff-dot {
+  background-color: var(--diff-expert);
+}
+
+.wc-title {
+  margin: 0;
+  font-size: 0.98rem;
+  font-weight: $semiBoldWeight;
+  line-height: 1.35;
+  color: var(--dark);
+}
+
+.wc-desc {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: var(--gray);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.wc-bottom {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.wc-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+
+  li {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+    background-color: color-mix(in srgb, var(--darkgray) 7%, transparent);
+    color: color-mix(in srgb, var(--darkgray) 85%, var(--gray));
+    border-radius: 999px;
+    padding: 0.1rem 0.55rem;
+    font-size: 0.68rem;
+    white-space: nowrap;
+  }
+
+  li.wc-more {
+    background-color: transparent;
+    padding-left: 0;
+  }
+}
+
+.wc-tag-icon {
+  width: 0.62rem;
+  height: 0.62rem;
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+.wc-meta {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  flex-shrink: 0;
+}
+
+.wc-cve {
+  font-family: var(--codeFont);
+  font-size: 0.66rem;
+  letter-spacing: 0.02em;
+  color: var(--darkgray);
+}
+
+.wc-date {
+  flex-shrink: 0;
+  font-size: 0.7rem;
+  color: var(--gray);
+  opacity: 1;
+}

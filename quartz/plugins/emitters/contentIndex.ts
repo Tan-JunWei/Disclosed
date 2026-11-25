@@ -2,12 +2,18 @@ import { Root } from "hast"
 import { GlobalConfiguration } from "../../cfg"
 import { getDate } from "../../components/Date"
 import { escapeHTML } from "../../util/escape"
-import { FilePath, FullSlug, SimpleSlug, joinSegments, simplifySlug } from "../../util/path"
+import { FilePath, FullSlug, SimpleSlug, joinSegments } from "../../util/path"
+import { absoluteAssetUrl, absoluteUrl } from "../../util/siteUrl"
+import { lastModified } from "../../util/seo"
+import { SITE } from "../../util/site"
+import { QuartzPluginData } from "../vfile"
 import { QuartzEmitterPlugin } from "../types"
 import { toHtml } from "hast-util-to-html"
 import { write } from "./helpers"
-import { i18n } from "../../i18n"
 import DepGraph from "../../depgraph"
+import { buildPostEntries } from "../../util/posts"
+import { buildGraphRelationships } from "../../util/graphRelationships"
+import { unreviewedTags } from "../../util/techniques"
 
 export type ContentIndex = Map<FullSlug, ContentDetails>
 export type ContentDetails = {
@@ -36,28 +42,69 @@ const defaultOptions: Options = {
   includeEmptyFiles: true,
 }
 
-function generateSiteMap(cfg: GlobalConfiguration, idx: ContentIndex): string {
-  const base = cfg.baseUrl ?? ""
-  const createURLEntry = (slug: SimpleSlug, content: ContentDetails): string => `<url>
-    <loc>https://${joinSegments(base, encodeURI(slug))}</loc>
-    ${content.date && `<lastmod>${content.date.toISOString()}</lastmod>`}
-  </url>`
-  const urls = Array.from(idx)
-    .map(([slug, content]) => createURLEntry(simplifySlug(slug), content))
-    .join("")
-  return `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">${urls}</urlset>`
+const xml = (text: string) =>
+  text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;")
+
+export interface SitemapEntry {
+  slug: FullSlug
+  lastmod?: Date
+}
+
+/** Folder and tag listing pages, which have no source file of their own. */
+export function listingSlugs(files: QuartzPluginData[]): FullSlug[] {
+  const slugs = new Set<FullSlug>()
+  for (const file of files) {
+    const parts = file.slug?.split("/") ?? []
+    for (let i = 1; i < parts.length; i++) {
+      slugs.add(`${parts.slice(0, i).join("/")}/index` as FullSlug)
+    }
+    const tags = file.frontmatter?.tags ?? []
+    if (tags.length) slugs.add("tags/index" as FullSlug)
+    for (const tag of tags) {
+      const segments = tag.split("/")
+      for (let i = 1; i <= segments.length; i++) {
+        slugs.add(`tags/${segments.slice(0, i).join("/")}` as FullSlug)
+      }
+    }
+  }
+  return [...slugs]
+}
+
+export function generateSiteMap(cfg: GlobalConfiguration, entries: SitemapEntry[]): string {
+  const urls = entries
+    .map(
+      ({ slug, lastmod }) =>
+        `<url><loc>${xml(absoluteUrl(cfg.baseUrl, slug))}</loc>${
+          lastmod ? `<lastmod>${lastmod.toISOString()}</lastmod>` : ""
+        }</url>`,
+    )
+    .join("\n")
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urls}
+</urlset>
+`
 }
 
 function generateRSSFeed(cfg: GlobalConfiguration, idx: ContentIndex, limit?: number): string {
-  const base = cfg.baseUrl ?? ""
+  const home = absoluteUrl(cfg.baseUrl)
+  const feedUrl = absoluteAssetUrl(cfg.baseUrl, "index.xml")
 
-  const createURLEntry = (slug: SimpleSlug, content: ContentDetails): string => `<item>
-    <title>${escapeHTML(content.title)}</title>
-    <link>https://${joinSegments(base, encodeURI(slug))}</link>
-    <guid>https://${joinSegments(base, encodeURI(slug))}</guid>
+  const createURLEntry = (slug: FullSlug, content: ContentDetails): string => {
+    const link = xml(absoluteUrl(cfg.baseUrl, slug))
+    return `<item>
+    <title>${xml(content.title)}</title>
+    <link>${link}</link>
+    <guid isPermaLink="true">${link}</guid>
     <description>${content.richContent ?? content.description}</description>
-    <pubDate>${content.date?.toUTCString()}</pubDate>
+    ${content.date ? `<pubDate>${content.date.toUTCString()}</pubDate>` : ""}
   </item>`
+  }
 
   const items = Array.from(idx)
     .sort(([_, f1], [__, f2]) => {
@@ -71,18 +118,18 @@ function generateRSSFeed(cfg: GlobalConfiguration, idx: ContentIndex, limit?: nu
 
       return f1.title.localeCompare(f2.title)
     })
-    .map(([slug, content]) => createURLEntry(simplifySlug(slug), content))
+    .map(([slug, content]) => createURLEntry(slug, content))
     .slice(0, limit ?? idx.size)
     .join("")
 
   return `<?xml version="1.0" encoding="UTF-8" ?>
-<rss version="2.0">
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
     <channel>
-      <title>${escapeHTML(cfg.pageTitle)}</title>
-      <link>https://${base}</link>
-      <description>${!!limit ? i18n(cfg.locale).pages.rss.lastFewNotes({ count: limit }) : i18n(cfg.locale).pages.rss.recentNotes} on ${escapeHTML(
-        cfg.pageTitle,
-      )}</description>
+      <title>${xml(cfg.pageTitle)}</title>
+      <link>${xml(home)}</link>
+      <atom:link href="${xml(feedUrl)}" rel="self" type="application/rss+xml" />
+      <description>${xml(SITE.description)}</description>
+      <language>${cfg.locale}</language>
       <generator>Quartz -- quartz.jzhao.xyz</generator>
       ${items}
     </channel>
@@ -103,6 +150,10 @@ export const ContentIndex: QuartzEmitterPlugin<Partial<Options>> = (opts) => {
           sourcePath,
           joinSegments(ctx.argv.output, "static/contentIndex.json") as FilePath,
         )
+        graph.addEdge(
+          sourcePath,
+          joinSegments(ctx.argv.output, "static/graphIndex.json") as FilePath,
+        )
         if (opts?.enableSiteMap) {
           graph.addEdge(sourcePath, joinSegments(ctx.argv.output, "sitemap.xml") as FilePath)
         }
@@ -119,7 +170,7 @@ export const ContentIndex: QuartzEmitterPlugin<Partial<Options>> = (opts) => {
       const linkIndex: ContentIndex = new Map()
       for (const [tree, file] of content) {
         const slug = file.data.slug!
-        const date = getDate(ctx.cfg.configuration, file.data) ?? new Date()
+        const date = getDate(ctx.cfg.configuration, file.data)
         if (opts?.includeEmptyFiles || (file.data.text && file.data.text !== "")) {
           linkIndex.set(slug, {
             title: file.data.frontmatter?.title!,
@@ -135,11 +186,21 @@ export const ContentIndex: QuartzEmitterPlugin<Partial<Options>> = (opts) => {
         }
       }
 
+      const files = content.map(([, file]) => file.data)
+      const entries = buildPostEntries(cfg, files)
+      const postSlugs = new Set(entries.map((entry) => entry.slug))
+
       if (opts?.enableSiteMap) {
         emitted.push(
           await write({
             ctx,
-            content: generateSiteMap(cfg, linkIndex),
+            content: generateSiteMap(cfg, [
+              ...content.map(([, file]) => ({
+                slug: file.data.slug!,
+                lastmod: lastModified(file.data),
+              })),
+              ...listingSlugs(files).map((slug) => ({ slug })),
+            ]),
             slug: "sitemap" as FullSlug,
             ext: ".xml",
           }),
@@ -150,12 +211,32 @@ export const ContentIndex: QuartzEmitterPlugin<Partial<Options>> = (opts) => {
         emitted.push(
           await write({
             ctx,
-            content: generateRSSFeed(cfg, linkIndex, opts.rssLimit),
+            // posts only: the home, landing and Explore pages are not news
+            content: generateRSSFeed(
+              cfg,
+              new Map([...linkIndex].filter(([slug]) => postSlugs.has(slug))),
+              opts.rssLimit,
+            ),
             slug: "index" as FullSlug,
             ext: ".xml",
           }),
         )
       }
+
+      const unknown = unreviewedTags(entries.flatMap((entry) => entry.tags))
+      if (unknown.length)
+        console.warn(
+          `Unreviewed technique tags (left unclassified): ${unknown.join(", ")}. They appear in the ` +
+            `homepage heatmap's "Unsorted" column until added to TECHNIQUE_FAMILIES (quartz/util/techniques.ts).`,
+        )
+      emitted.push(
+        await write({
+          ctx,
+          content: JSON.stringify(buildGraphRelationships(files, entries)),
+          slug: "static/graphIndex" as FullSlug,
+          ext: ".json",
+        }),
+      )
 
       const fp = joinSegments("static", "contentIndex") as FullSlug
       const simplifiedIndex = Object.fromEntries(

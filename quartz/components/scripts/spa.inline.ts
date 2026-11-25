@@ -31,8 +31,14 @@ const getOpts = ({ target }: Event): { url: URL; scroll?: boolean } | undefined 
   if ("routerIgnore" in a.dataset) return
   // SVGAElement.href is an SVGAnimatedString, not a plain string like HTMLAnchorElement.href
   const href = a instanceof SVGAElement ? a.href.baseVal : a.href
-  if (!isLocalUrl(href)) return
-  return { url: new URL(href, document.baseURI), scroll: "routerNoscroll" in a.dataset ? false : undefined }
+  if (!isLocalUrl(href) || a.hasAttribute("download")) return
+  // attachments (images, archives, audio) are left to the browser, which can stream or save them
+  const url = new URL(href, document.baseURI)
+  if (/\/(Assets|static)\//.test(url.pathname)) return
+  return {
+    url,
+    scroll: "routerNoscroll" in a.dataset ? false : undefined,
+  }
 }
 
 function notifyNav(url: FullSlug) {
@@ -43,29 +49,48 @@ function notifyNav(url: FullSlug) {
 const cleanupFns: Set<(...args: any[]) => void> = new Set()
 window.addCleanup = (fn) => cleanupFns.add(fn)
 
-let p: DOMParser
-async function navigate(url: URL, isBack: boolean = false) {
-  p = p || new DOMParser()
-  const contents = await fetch(`${url}`)
-    .then((res) => {
-      const contentType = res.headers.get("content-type")
-      if (contentType?.startsWith("text/html")) {
-        return res.text()
-      } else {
-        window.location.assign(url)
-      }
-    })
-    .catch(() => {
-      window.location.assign(url)
-    })
+/** The build version in the asset URLs, so a tab opened before a deploy can tell it is stale. */
+const buildVersion = (doc: Document) =>
+  doc.querySelector<HTMLScriptElement>('script[src*="postscript.js"]')?.src.split("?v=")[1]
 
-  if (!contents) return
+let p: DOMParser
+let latestNavigation = 0
+async function navigate(url: URL, isBack: boolean = false) {
+  const fullLoad = () => (isBack ? window.location.reload() : window.location.assign(url))
+  try {
+    await swapPage(url, isBack, ++latestNavigation, fullLoad)
+  } catch (error) {
+    console.error("Navigation failed, loading the page normally:", error)
+    fullLoad()
+  }
+}
+
+async function swapPage(url: URL, isBack: boolean, navigation: number, fullLoad: () => void) {
+  p = p || new DOMParser()
+  let contents: string | undefined
+  try {
+    const res = await fetch(`${url}`)
+    if (res.headers.get("content-type")?.startsWith("text/html")) {
+      contents = await res.text()
+    } else {
+      void res.body?.cancel().catch(() => {})
+      return fullLoad()
+    }
+  } catch {
+    return fullLoad()
+  }
+
+  // a later click won the race, so this page is no longer wanted
+  if (navigation !== latestNavigation) return
 
   // cleanup old
   cleanupFns.forEach((fn) => fn())
   cleanupFns.clear()
 
   const html = p.parseFromString(contents, "text/html")
+  // after a deploy the new page may need scripts and styles this tab does not have
+  const nextVersion = buildVersion(html)
+  if (nextVersion && nextVersion !== buildVersion(document)) return fullLoad()
   normalizeRelativeURLs(html, url)
 
   let title = html.querySelector("title")?.textContent
@@ -99,6 +124,19 @@ async function navigate(url: URL, isBack: boolean = false) {
   elementsToRemove.forEach((el) => el.remove())
   const elementsToAdd = html.head.querySelectorAll(":not([spa-preserve])")
   elementsToAdd.forEach((el) => document.head.appendChild(el))
+  // preserved stylesheets stay for the whole visit, but a page can need one the first page did not
+  // (KaTeX is only linked from pages with math). The query string is a build version, so ignore it.
+  const withoutQuery = (href: string) => href.split("?")[0]
+  const loaded = new Set(
+    [...document.head.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]')].map((link) =>
+      withoutQuery(link.href),
+    ),
+  )
+  html.head
+    .querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"][spa-preserve]')
+    .forEach((link) => {
+      if (!loaded.has(withoutQuery(link.href))) document.head.appendChild(link)
+    })
 
   // delay setting the url until now
   // at this point everything is loaded so changing the url should resolve to the correct addresses
@@ -116,7 +154,16 @@ function createRouter() {
     window.addEventListener("click", async (event) => {
       const { url } = getOpts(event) ?? {}
       // dont hijack behaviour, just let browser act normally
-      if (!url || event.ctrlKey || event.metaKey) return
+      if (
+        !url ||
+        event.defaultPrevented ||
+        event.button !== 0 ||
+        event.ctrlKey ||
+        event.metaKey ||
+        event.shiftKey ||
+        event.altKey
+      )
+        return
       event.preventDefault()
 
       if (isSamePage(url) && url.hash) {
@@ -126,22 +173,13 @@ function createRouter() {
         return
       }
 
-      try {
-        navigate(url, false)
-      } catch (e) {
-        window.location.assign(url)
-      }
+      void navigate(url, false)
     })
 
     window.addEventListener("popstate", (event) => {
       const { url } = getOpts(event) ?? {}
       if (window.location.hash && window.location.pathname === url?.pathname) return
-      try {
-        navigate(new URL(window.location.toString()), true)
-      } catch (e) {
-        window.location.reload()
-      }
-      return
+      void navigate(new URL(window.location.toString()), true)
     })
   }
 

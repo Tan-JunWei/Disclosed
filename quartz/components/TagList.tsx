@@ -1,7 +1,7 @@
 import { pathToRoot, slugTag } from "../util/path"
 import { QuartzComponent, QuartzComponentConstructor, QuartzComponentProps } from "./types"
 import { classNames } from "../util/lang"
-import { colorForTag } from "../util/tagColor"
+import { tagColorVars } from "../util/tagColor"
 
 const TagList: QuartzComponent = ({ fileData, displayClass }: QuartzComponentProps) => {
   const tags = fileData.frontmatter?.tags
@@ -13,14 +13,7 @@ const TagList: QuartzComponent = ({ fileData, displayClass }: QuartzComponentPro
     <ul class={classNames(displayClass, "tags")}>
       {tags.map((tag) => {
         const linkDest = baseDir + `/tags/${slugTag(tag)}`
-        const { hue, lightL, darkL } = colorForTag(tag)
-        // expose hue + per-theme lightness as CSS variables, not inline 'color'
-        const style = {
-          // TSX: allow custom properties
-          ["--tag-hue" as any]: hue,
-          ["--tag-light-l" as any]: `${lightL}%`,
-          ["--tag-dark-l" as any]: `${darkL}%`,
-        }
+        const style = tagColorVars(tag)
         return (
           <li>
             <a href={linkDest} class="internal tag-link" style={style}>

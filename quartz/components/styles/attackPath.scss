@@ -1,0 +1,603 @@
+@use "../../styles/variables.scss" as *;
+
+// The attack path diagram, drawn from an ```attack-path block. The route takes the colour of the
+// post's severity (red unless the post says otherwise), and mitigations are always green.
+.attack-path {
+  --ap-attack: var(--diff-hard-artwork);
+  --ap-attack-ink: var(--diff-hard);
+  --ap-safe: var(--diff-easy-fill);
+  --ap-safe-ink: var(--diff-easy);
+
+  margin: 1.6rem 0;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  overflow: hidden;
+}
+
+@each $hue in beginner, easy, medium, hard, insane, expert {
+  .attack-path.ap-hue-#{$hue} {
+    --ap-attack: var(--diff-#{$hue}-artwork);
+    --ap-attack-ink: var(--diff-#{$hue});
+  }
+}
+
+// ---- header, zoom controls and legend ---------------------------------------------------------
+
+.ap-head,
+.ap-foot {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  padding: 0.55rem 0.75rem 0.55rem 1rem;
+  font-family: var(--codeFont);
+  font-size: 0.64rem;
+  letter-spacing: 0.1em;
+  word-spacing: normal;
+  text-transform: uppercase;
+  color: var(--gray);
+}
+
+.ap-head {
+  border-bottom: 1px solid var(--lightgray);
+}
+
+.ap-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-weight: 600;
+  color: var(--dark);
+}
+
+// a tiny route: a line with a stop at each end
+.ap-glyph {
+  position: relative;
+  width: 1.3rem;
+  height: 2px;
+  background: var(--ap-attack);
+
+  &::before,
+  &::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 2px solid var(--ap-attack);
+    transform: translateY(-50%);
+  }
+
+  &::before {
+    left: -3px;
+  }
+
+  &::after {
+    right: -3px;
+  }
+}
+
+.ap-tools {
+  display: inline-flex;
+  margin-left: auto;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+
+  &[hidden] {
+    display: none;
+  }
+}
+
+.ap-tool {
+  display: grid;
+  place-items: center;
+  height: 1.7rem;
+  min-width: 1.85rem;
+  padding: 0 0.45rem;
+  border: 0;
+  background: transparent;
+  color: var(--darkgray);
+  font: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+
+  & + & {
+    border-left: 1px solid var(--lightgray);
+  }
+
+  &:hover,
+  &:focus-visible {
+    background: var(--highlight);
+    color: var(--dark);
+  }
+
+  // the limit has been reached: the button stays in place (and focusable) but reads as used up
+  &[aria-disabled="true"] {
+    color: var(--gray);
+    opacity: 0.4;
+    cursor: default;
+
+    &:hover {
+      background: transparent;
+    }
+  }
+
+  & svg {
+    width: 0.8rem;
+    height: 0.8rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+  }
+}
+
+.ap-zoom-level {
+  min-width: 2.7rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.ap-foot {
+  border-top: 1px solid var(--lightgray);
+}
+
+.ap-hint {
+  margin-left: auto;
+  text-align: right;
+}
+
+.ap-key::before {
+  content: "";
+  display: inline-block;
+  width: 0.6rem;
+  height: 0.6rem;
+  margin-right: 0.45rem;
+  border-radius: 2px;
+  vertical-align: -0.05rem;
+  background: var(--ap-attack);
+}
+
+.ap-key-safe::before {
+  background: var(--ap-safe);
+}
+
+// ---- the zoomable viewport --------------------------------------------------------------------
+
+.ap-viewport {
+  // the script sets --ap-zoom and the background position, so the dots scale and pan with the diagram
+  --ap-zoom: 1;
+  --ap-thumb: color-mix(in srgb, var(--gray) 32%, transparent);
+  --ap-thumb-hover: color-mix(in srgb, var(--gray) 62%, transparent);
+
+  position: relative;
+  overflow: auto;
+  max-height: 34rem;
+  height: var(--ap-height, auto);
+  // two layers: the dots move with the diagram, while the ground colour stays put so that it also
+  // fills the scrollbar gutter (a `local` colour would leave a paler strip behind the scrollbars)
+  --ap-ground: color-mix(in srgb, var(--surface-muted) 38%, var(--surface));
+  background-image: radial-gradient(
+      circle at center,
+      color-mix(in srgb, var(--gray) 22%, transparent) 1.1px,
+      transparent 1.6px
+    ),
+    linear-gradient(var(--ap-ground), var(--ap-ground));
+  background-size:
+    max(11px, calc(18px * var(--ap-zoom))) max(11px, calc(18px * var(--ap-zoom))),
+    auto;
+  background-attachment: local, scroll;
+  background-repeat: repeat, no-repeat;
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: inset 0 0 0 2px var(--secondary);
+  }
+
+  // only offered while there is something to drag
+  &.can-pan {
+    cursor: grab;
+  }
+
+  &.is-panning {
+    cursor: grabbing;
+    user-select: none;
+  }
+
+  // Scrollbars: slim, transparent tracks and a thumb that is only a few pixels wide, so the diagram
+  // is never covered or boxed in. They firm up when the pointer is over the diagram.
+  &::-webkit-scrollbar {
+    width: 11px;
+    height: 11px;
+  }
+
+  &::-webkit-scrollbar-track,
+  &::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    min-width: 40px;
+    min-height: 40px;
+    border: 3.5px solid transparent;
+    border-radius: 11px;
+    background-color: var(--ap-thumb);
+    background-clip: padding-box;
+  }
+
+  &:hover::-webkit-scrollbar-thumb {
+    background-color: color-mix(in srgb, var(--gray) 46%, transparent);
+  }
+
+  &::-webkit-scrollbar-thumb:hover,
+  &::-webkit-scrollbar-thumb:active {
+    background-color: var(--ap-thumb-hover);
+  }
+}
+
+// Firefox ignores the rules above, and Chrome would ignore them if these were set, hence @supports
+@supports not selector(::-webkit-scrollbar) {
+  .ap-viewport {
+    scrollbar-width: thin;
+    scrollbar-color: var(--ap-thumb) transparent;
+  }
+}
+
+.ap-sizer {
+  position: relative;
+  width: max-content;
+  margin: 0 auto;
+}
+
+.ap-canvas {
+  width: max-content;
+  transform-origin: 0 0;
+}
+
+.ap-svg {
+  display: block;
+  max-width: none;
+  overflow: visible;
+
+  // SVG text does not inherit the page font on its own
+  & text {
+    font-family: var(--bodyFont);
+    word-spacing: normal;
+  }
+}
+
+// ---- steps ------------------------------------------------------------------------------------
+
+.ap-hit {
+  fill: transparent;
+  pointer-events: all;
+}
+
+.ap-card {
+  fill: var(--surface);
+  stroke: var(--ap-attack);
+  stroke-width: 1.3;
+  filter: drop-shadow(0 1.5px 2px color-mix(in srgb, var(--dark) 12%, transparent));
+  transition:
+    stroke 0.15s ease,
+    filter 0.15s ease;
+}
+
+// Headers share the illustration accent, with fixed dark ink for contrast in either theme.
+.ap-head-fill {
+  fill: var(--ap-attack);
+}
+
+.ap-svg text.ap-tag {
+  font-family: var(--codeFont);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  fill: #10131a;
+}
+
+.ap-title {
+  font-size: 12.5px;
+  font-weight: $semiBoldWeight;
+  fill: var(--dark);
+}
+
+.ap-icon {
+  fill: none;
+  stroke: var(--darkgray);
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.ap-icon-head {
+  stroke: #10131a;
+  opacity: 0.85;
+}
+
+.ap-icon-safe {
+  stroke: var(--ap-safe-ink);
+}
+
+.ap-foot-fill {
+  fill: color-mix(in srgb, var(--ap-safe) 13%, var(--surface));
+}
+
+.ap-foot-rule {
+  fill: none;
+  stroke: color-mix(in srgb, var(--ap-safe) 45%, var(--border));
+  stroke-width: 1;
+}
+
+.ap-svg text.ap-foot-tag {
+  font-family: var(--codeFont);
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  fill: var(--ap-safe-ink);
+}
+
+.ap-mitigation-text {
+  font-size: 12.5px;
+  fill: var(--dark);
+  opacity: 1;
+}
+
+// The attacker is not a step but the party outside, so it is drawn as a badge instead of a card: a
+// hooded hacker in bold flat shapes. The coral and the pale badge follow the route colour, while the
+// black, white and the ring around the badge stay fixed.
+.ap-f-red {
+  fill: var(--ap-attack);
+}
+
+.ap-f-pale {
+  fill: color-mix(in srgb, var(--ap-attack) 24%, #fff);
+}
+
+.ap-f-pink {
+  fill: color-mix(in srgb, var(--ap-attack) 55%, #fff);
+}
+
+.ap-f-black {
+  fill: #10131a;
+}
+
+.ap-f-white {
+  fill: #fff;
+}
+
+.ap-s-red {
+  stroke: var(--ap-attack);
+}
+
+.ap-s-pink {
+  stroke: color-mix(in srgb, var(--ap-attack) 55%, #fff);
+}
+
+.ap-s-black {
+  stroke: #10131a;
+}
+
+.ap-s-ring {
+  stroke: #241d22;
+}
+
+.ap-svg text.ap-actor-name {
+  text-anchor: middle;
+}
+
+// ---- the route --------------------------------------------------------------------------------
+
+// The longest chain is the heavy line and the branches off it are lighter.
+.ap-edge {
+  --ap-wire: var(--ap-attack);
+}
+
+.ap-trace {
+  fill: none;
+  stroke: var(--ap-wire);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.ap-main .ap-trace {
+  stroke-width: 2.8;
+}
+
+// a short bright segment that travels along each trace, like a signal on a wire
+// The glow is a second, wider and fainter stroke travelling with the packet, not a blur filter: a
+// filter on an animated element is re-rasterised every frame, which smears and flickers once the
+// diagram is scaled.
+.ap-packet,
+.ap-packet-glow {
+  fill: none;
+  stroke: var(--ap-wire);
+  stroke-linecap: round;
+  stroke-dasharray: 6 94;
+  animation: ap-travel 2.6s linear infinite;
+}
+
+.ap-packet {
+  stroke-width: 4.2;
+}
+
+.ap-packet-glow {
+  stroke-width: 9;
+  opacity: 0.22;
+}
+
+@keyframes ap-travel {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: -100;
+  }
+}
+
+// the head takes the colour of the trace it ends (context-stroke), with the route colour as the
+// fallback for browsers that do not support it
+.ap-arrowhead {
+  fill: var(--ap-attack);
+  fill: context-stroke;
+}
+
+// a solder pad where each trace leaves its card
+.ap-pad {
+  fill: var(--surface);
+  stroke: var(--ap-wire);
+  stroke-width: 1.8;
+}
+
+// hover linking: the chosen step stays lit and everything else steps back
+.ap-node,
+.ap-edge,
+.ap-step {
+  transition: opacity 0.15s ease;
+}
+
+.attack-path.is-linked {
+  & .ap-node:not(.is-active),
+  & .ap-edge:not(.is-active),
+  & .ap-step:not(.is-active) {
+    opacity: 0.32;
+  }
+
+  & .ap-node.is-active .ap-card {
+    stroke: var(--ap-attack);
+    stroke-width: 2.2;
+    filter: drop-shadow(0 0 6px color-mix(in srgb, var(--ap-attack) 40%, transparent));
+  }
+}
+
+// ---- the step list: a vertical rail, and the accessible version of the diagram ------------------
+
+.ap-steps {
+  margin: 0;
+  padding: 1.1rem 1rem 0.4rem;
+  list-style: none;
+  border-top: 1px solid var(--lightgray);
+}
+
+.ap-step {
+  position: relative;
+  display: grid;
+  grid-template-columns: 5.4rem minmax(0, 1fr);
+  gap: 0.9rem;
+  margin: 0;
+  padding: 0 0.4rem 1.15rem 0;
+
+  // the rail joining one step to the next
+  &::before {
+    content: "";
+    position: absolute;
+    top: 1.55rem;
+    bottom: -0.35rem;
+    left: 1.2rem;
+    width: 1px;
+    background: color-mix(in srgb, var(--ap-attack) 35%, var(--border));
+  }
+
+  &:last-child::before {
+    display: none;
+  }
+
+  &.is-active .ap-step-no {
+    background: var(--ap-attack);
+    color: #10161c;
+  }
+}
+
+.ap-step-no {
+  z-index: 1;
+  align-self: start;
+  justify-self: start;
+  padding: 0.2rem 0.5rem;
+  border: 1px solid color-mix(in srgb, var(--ap-attack) 50%, var(--border));
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--ap-attack) 10%, var(--surface));
+  font-family: var(--codeFont);
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  word-spacing: normal;
+  white-space: nowrap;
+  color: var(--ap-attack-ink);
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.ap-step-body {
+  min-width: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+
+  & strong {
+    display: block;
+    color: var(--dark);
+  }
+
+  & p {
+    margin: 0.3rem 0 0;
+    color: var(--darkgray);
+  }
+}
+
+.ap-step .ap-mitigation {
+  margin-top: 0.5rem;
+  padding: 0.4rem 0.65rem;
+  border-left: 2px solid var(--ap-safe);
+  border-radius: 0 6px 6px 0;
+  background: color-mix(in srgb, var(--ap-safe) 9%, transparent);
+
+  & span {
+    margin-right: 0.5rem;
+    font-family: var(--codeFont);
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+    word-spacing: normal;
+    color: var(--ap-safe-ink);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ap-packet,
+  .ap-packet-glow {
+    display: none;
+  }
+}
+
+@media all and (max-width: $mobileBreakpoint) {
+  .ap-step {
+    grid-template-columns: 1fr;
+    gap: 0.35rem;
+
+    &::before {
+      display: none;
+    }
+  }
+
+  .ap-hint {
+    display: none;
+  }
+}
+
+// touch screens select a step with a tap instead of hovering (see linkHover)
+@media (hover: none) {
+  .ap-node,
+  .ap-step {
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
