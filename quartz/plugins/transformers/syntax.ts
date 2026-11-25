@@ -1,6 +1,8 @@
 import { QuartzTransformerPlugin } from "../types"
 import rehypePrettyCode, { Options as CodeOptions, Theme as CodeTheme } from "rehype-pretty-code"
 import { buildTerminalAwareHighlighter } from "./terminalSessionHighlighting"
+import { markDiffLines } from "./diffLines"
+import { addLanguageHeaders } from "./codeLanguageHeader"
 
 interface Theme extends Record<string, CodeTheme> {
   light: CodeTheme
@@ -26,7 +28,11 @@ export const SyntaxHighlighting: QuartzTransformerPlugin<Partial<Options>> = (us
   return {
     name: "SyntaxHighlighting",
     htmlPlugins() {
-      return [[rehypePrettyCode, { ...opts, getHighlighter: buildTerminalAwareHighlighter }]]
+      return [
+        [rehypePrettyCode, { ...opts, getHighlighter: buildTerminalAwareHighlighter }],
+        markDiffLines,
+        addLanguageHeaders,
+      ]
     },
   }
 }

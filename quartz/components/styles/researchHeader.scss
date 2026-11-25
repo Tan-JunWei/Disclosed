@@ -1,0 +1,147 @@
+@use "../../styles/variables.scss" as *;
+@use "../../styles/surface.scss" as surface;
+
+// research uses the red accent, like its section card on the homepage
+.research-facts {
+  @include surface.card-surface(10%);
+  @include surface.card-grid(55%, 70%, 18px, 30%, 0.75);
+  --card-accent: hsl(7 68% 52%);
+  margin: 1rem 0 1.4rem;
+  padding: 1rem 1.2rem;
+}
+
+.research-facts .rh-title {
+  margin: 0 0 0.65rem;
+  padding: 0 0 0.55rem;
+  border-bottom: 1px solid var(--lightgray);
+  font-family: var(--bodyFont);
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: normal;
+  color: var(--dark);
+}
+
+.rh-grid {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0;
+}
+
+.rh-item {
+  display: grid;
+  grid-template-columns: 7.5rem minmax(0, 1fr);
+  align-items: baseline;
+  gap: 0.25rem 1rem;
+  min-width: 0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+
+  & dt {
+    margin: 0;
+    color: var(--darkgray);
+    font-family: var(--bodyFont);
+    font-size: 0.8rem;
+    font-weight: 400;
+    letter-spacing: normal;
+  }
+
+  & dd {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.25rem 0.6rem;
+    min-width: 0;
+    margin: 0;
+    color: var(--dark);
+    overflow-wrap: anywhere;
+
+    & code {
+      padding: 0;
+      background: none;
+      font-size: 0.8rem;
+      white-space: normal;
+      color: inherit;
+    }
+  }
+}
+
+.rh-advisory dd {
+  font-weight: 600;
+}
+
+.rh-score-value {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.rh-score-scale {
+  font-size: 0.78rem;
+  font-weight: 400;
+  color: var(--darkgray);
+}
+
+.rh-severity {
+  padding: 0.08rem 0.55rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, currentColor 13%, var(--surface));
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.rh-severity-low {
+  color: var(--diff-beginner);
+}
+
+.rh-severity-high {
+  color: var(--diff-hard);
+}
+
+.rh-severity-critical {
+  color: var(--diff-insane);
+}
+
+.rh-severity-medium {
+  color: var(--diff-medium);
+}
+
+.rh-fixed dd {
+  color: var(--diff-easy);
+  font-weight: $semiBoldWeight;
+}
+
+.research-facts a.rh-link {
+  background: none;
+  color: inherit;
+  font-weight: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+  text-decoration-color: color-mix(in srgb, var(--secondary) 45%, transparent);
+
+  &:hover,
+  &:focus-visible {
+    text-decoration-color: currentColor;
+  }
+}
+
+@media (max-width: 480px) {
+  .research-facts {
+    padding: 0.75rem;
+  }
+
+  .rh-item {
+    grid-template-columns: 6.5rem minmax(0, 1fr);
+    column-gap: 0.6rem;
+  }
+}
+
+.rh-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

@@ -1,43 +1,46 @@
-import FlexSearch from "flexsearch"
+import type FlexSearch from "flexsearch"
+import type * as SearchEngine from "./search/engine"
+import { fuzzySearchScore } from "../../util/postFilters"
 import { ContentDetails } from "../../plugins/emitters/contentIndex"
 import { registerEscapeHandler, removeAllChildren } from "./util"
 import { FullSlug, normalizeRelativeURLs, resolveRelative } from "../../util/path"
 
-interface Item {
-  id: number
-  slug: FullSlug
-  title: string
-  content: string
-  tags: string[]
-}
+type Item = SearchEngine.Item
 
 // Can be expanded with things like "term" in the future
 type SearchType = "basic" | "tags"
 let searchType: SearchType = "basic"
 let currentSearchTerm: string = ""
-const encoder = (str: string) => str.toLowerCase().split(/([^a-z]|[^\x00-\x7F])/)
-let index = new FlexSearch.Document<Item>({
-  charset: "latin:extra",
-  encode: encoder,
-  document: {
-    id: "id",
-    tag: "tags",
-    index: [
-      {
-        field: "title",
-        tokenize: "forward",
-      },
-      {
-        field: "content",
-        tokenize: "forward",
-      },
-      {
-        field: "tags",
-        tokenize: "forward",
-      },
-    ],
-  },
-})
+let index: SearchEngine.SearchIndex | undefined
+
+type SearchData = { [key: FullSlug]: ContentDetails }
+let searchData: Promise<SearchData> | undefined
+
+/**
+ * The index is about as large as all posts' text combined, so it is fetched the first time someone
+ * opens or uses search rather than on every page load, and the search index is built only once.
+ */
+function loadSearchData(currentSlug: FullSlug): Promise<SearchData> {
+  if (!searchData) {
+    const engineSrc = document.getElementById("search-container")?.dataset.moduleSrc
+    const engine: Promise<typeof SearchEngine> = engineSrc
+      ? import(/* @vite-ignore */ new URL(engineSrc, window.location.href).href)
+      : Promise.reject(new Error("Search engine module is not configured"))
+    const content = fetch(
+      resolveRelative(currentSlug, "static/contentIndex.json" as FullSlug),
+    ).then((response) => {
+      if (!response.ok) throw new Error(`Search index: ${response.status}`)
+      return response.json() as Promise<SearchData>
+    })
+    searchData = Promise.all([content, engine]).then(async ([data, { buildIndex }]) => {
+      index = await buildIndex(data)
+      return data
+    })
+    // a failed download is retried on the next search instead of breaking search until a reload
+    searchData.catch(() => (searchData = undefined))
+  }
+  return searchData
+}
 
 const p = new DOMParser()
 const fetchContentCache: Map<FullSlug, Element[]> = new Map()
@@ -89,7 +92,7 @@ function highlight(searchTerm: string, text: string, trim?: boolean) {
       // see if this tok is prefixed by any search terms
       for (const searchTok of tokenizedTerms) {
         if (tok.toLowerCase().includes(searchTok.toLowerCase())) {
-          const regex = new RegExp(searchTok.toLowerCase(), "gi")
+          const regex = new RegExp(searchTok.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi")
           return tok.replace(regex, `<span class="highlight">$&</span>`)
         }
       }
@@ -117,7 +120,7 @@ function highlightHTML(searchTerm: string, el: HTMLElement) {
   const highlightTextNodes = (node: Node, term: string) => {
     if (node.nodeType === Node.TEXT_NODE) {
       const nodeText = node.nodeValue ?? ""
-      const regex = new RegExp(term.toLowerCase(), "gi")
+      const regex = new RegExp(term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi")
       const matches = nodeText.match(regex)
       if (!matches || matches.length === 0) return
       const spanContainer = document.createElement("span")
@@ -145,13 +148,18 @@ function highlightHTML(searchTerm: string, el: HTMLElement) {
 
 document.addEventListener("nav", async (e: CustomEventMap["nav"]) => {
   const currentSlug = e.detail.url
-  const data = await fetchData
+  let data: SearchData = {}
+  let idDataMap: FullSlug[] = []
+  const ready = () =>
+    loadSearchData(currentSlug).then((loaded) => {
+      data = loaded
+      idDataMap = Object.keys(loaded) as FullSlug[]
+    })
   const container = document.getElementById("search-container")
   const sidebar = container?.closest(".sidebar") as HTMLElement
   const searchButton = document.getElementById("search-button")
   const searchBar = document.getElementById("search-bar") as HTMLInputElement | null
   const searchLayout = document.getElementById("search-layout")
-  const idDataMap = Object.keys(data) as FullSlug[]
 
   const appendLayout = (el: HTMLElement) => {
     if (searchLayout?.querySelector(`#${el.id}`) === null) {
@@ -174,6 +182,7 @@ document.addEventListener("nav", async (e: CustomEventMap["nav"]) => {
 
   function hideSearch() {
     container?.classList.remove("active")
+    searchButton?.setAttribute("aria-expanded", "false")
     if (searchBar) {
       searchBar.value = "" // clear the input when we dismiss the search
     }
@@ -201,7 +210,9 @@ document.addEventListener("nav", async (e: CustomEventMap["nav"]) => {
       sidebar.style.zIndex = "1"
     }
     container?.classList.add("active")
+    searchButton?.setAttribute("aria-expanded", "true")
     searchBar?.focus()
+    void ready()
   }
 
   let currentHover: HTMLInputElement | null = null
@@ -309,13 +320,7 @@ document.addEventListener("nav", async (e: CustomEventMap["nav"]) => {
     itemTile.classList.add("result-card")
     itemTile.id = slug
     itemTile.href = resolveUrl(slug).toString()
-    itemTile.innerHTML = `<h3>${title}</h3>${htmlTags}${
-      enablePreview && window.innerWidth > 600 ? "" : `<p>${content}</p>`
-    }`
-    itemTile.addEventListener("click", (event) => {
-      if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return
-      hideSearch()
-    })
+    itemTile.innerHTML = `<h3>${title}</h3>${htmlTags}<p class="preview">${content}</p>`
 
     const handler = (event: MouseEvent) => {
       if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return
@@ -325,6 +330,9 @@ document.addEventListener("nav", async (e: CustomEventMap["nav"]) => {
     async function onMouseEnter(ev: MouseEvent) {
       if (!ev.target) return
       const target = ev.target as HTMLInputElement
+      results.querySelector(".focus")?.classList.remove("focus")
+      target.classList.add("focus")
+      currentHover = target
       await displayPreview(target)
     }
 
@@ -367,27 +375,30 @@ document.addEventListener("nav", async (e: CustomEventMap["nav"]) => {
     }
 
     const targetUrl = resolveUrl(slug).toString()
-    const contents = await fetch(targetUrl)
-      .then((res) => res.text())
-      .then((contents) => {
-        if (contents === undefined) {
-          throw new Error(`Could not fetch ${targetUrl}`)
-        }
-        const html = p.parseFromString(contents ?? "", "text/html")
-        normalizeRelativeURLs(html, targetUrl)
-        return [...html.getElementsByClassName("popover-hint")]
-      })
-
-    fetchContentCache.set(slug, contents)
-    return contents
+    try {
+      const response = await fetch(targetUrl)
+      if (!response.ok) throw new Error(`${response.status} for ${targetUrl}`)
+      const html = p.parseFromString(await response.text(), "text/html")
+      normalizeRelativeURLs(html, targetUrl)
+      const contents = [...html.getElementsByClassName("popover-hint")]
+      fetchContentCache.set(slug, contents)
+      return contents
+    } catch (error) {
+      // not cached, so hovering the result again retries
+      console.warn("Search preview unavailable:", error)
+      return []
+    }
   }
 
+  let previewRequest = 0
   async function displayPreview(el: HTMLElement | null) {
     if (!searchLayout || !enablePreview || !el || !preview) return
+    const request = ++previewRequest
     const slug = el.id as FullSlug
     const innerDiv = await fetchContent(slug).then((contents) =>
       contents.flatMap((el) => [...highlightHTML(currentSearchTerm, el as HTMLElement).children]),
     )
+    if (request !== previewRequest || !container?.classList.contains("active")) return
     previewInner = document.createElement("div")
     previewInner.classList.add("preview-inner")
     previewInner.append(...innerDiv)
@@ -400,12 +411,22 @@ document.addEventListener("nav", async (e: CustomEventMap["nav"]) => {
     highlights[0]?.scrollIntoView({ block: "start" })
   }
 
+  let searchRequest = 0
   async function onType(e: HTMLElementEventMap["input"]) {
-    if (!searchLayout || !index) return
-    currentSearchTerm = (e.target as HTMLInputElement).value
+    if (!searchLayout) return
+    const request = ++searchRequest
+    const term = (e.target as HTMLInputElement).value
+    try {
+      await ready()
+    } catch {
+      return
+    }
+    if (request !== searchRequest || !index) return
+    currentSearchTerm = term
     searchLayout.classList.toggle("display-results", currentSearchTerm !== "")
     searchType = currentSearchTerm.startsWith("#") ? "tags" : "basic"
 
+    let tagConstraint: string | undefined
     let searchResults: FlexSearch.SimpleDocumentSearchResultSetUnit[]
     if (searchType === "tags") {
       currentSearchTerm = currentSearchTerm.substring(1).trim()
@@ -413,6 +434,7 @@ document.addEventListener("nav", async (e: CustomEventMap["nav"]) => {
       if (separatorIndex != -1) {
         // search by title and content index and then filter by tag (implemented in flexsearch)
         const tag = currentSearchTerm.substring(0, separatorIndex)
+        tagConstraint = tag
         const query = currentSearchTerm.substring(separatorIndex + 1).trim()
         searchResults = await index.searchAsync({
           query: query,
@@ -443,6 +465,7 @@ document.addEventListener("nav", async (e: CustomEventMap["nav"]) => {
       })
     }
 
+    if (request !== searchRequest) return
     const getByField = (field: string): number[] => {
       const results = searchResults.filter((x) => x.field === field)
       return results.length === 0 ? [] : ([...results[0].result] as number[])
@@ -454,40 +477,59 @@ document.addEventListener("nav", async (e: CustomEventMap["nav"]) => {
       ...getByField("content"),
       ...getByField("tags"),
     ])
-    const finalResults = [...allIds].map((id) => formatForDisplay(currentSearchTerm, id))
+    const fuzzyIds = idDataMap
+      .map((slug, id) => {
+        const item: ContentDetails = data[slug]
+        if (
+          tagConstraint &&
+          !item.tags.some((tag) => Number.isFinite(fuzzySearchScore(tagConstraint!, tag)))
+        )
+          return { id, score: Infinity }
+        const text =
+          searchType === "tags" ? item.tags.join(" ") : `${item.title} ${item.tags.join(" ")}`
+        return { id, score: fuzzySearchScore(currentSearchTerm, text) }
+      })
+      .filter((match) => Number.isFinite(match.score))
+      .sort((a, b) => a.score - b.score)
+    const rankedIds = new Set([
+      ...getByField("title"),
+      ...fuzzyIds.map((match) => match.id),
+      ...allIds,
+    ])
+    const finalResults = [...rankedIds]
+      .slice(0, numSearchResults)
+      .map((id) => formatForDisplay(currentSearchTerm, id))
     await displayResults(finalResults)
   }
 
   document.addEventListener("keydown", shortcutHandler)
   window.addCleanup(() => document.removeEventListener("keydown", shortcutHandler))
-  searchButton?.addEventListener("click", () => showSearch("basic"))
-  window.addCleanup(() => searchButton?.removeEventListener("click", () => showSearch("basic")))
+  const shortcutModifier = searchButton?.querySelector(".search-shortcut-mod")
+  if (shortcutModifier && /Mac|iPhone|iPad/.test(navigator.platform)) {
+    shortcutModifier.textContent = "⌘"
+    searchButton?.setAttribute(
+      "aria-label",
+      `${searchButton.querySelector(".search-label")?.textContent} ⌘ K`,
+    )
+  }
+  const searchClose = document.getElementById("search-close")
+  searchClose?.addEventListener("click", hideSearch)
+  window.addCleanup(() => searchClose?.removeEventListener("click", hideSearch))
+  const openSearch = () => showSearch("basic")
+  searchButton?.addEventListener("click", openSearch)
+  window.addCleanup(() => searchButton?.removeEventListener("click", openSearch))
   searchBar?.addEventListener("input", onType)
   window.addCleanup(() => searchBar?.removeEventListener("input", onType))
 
-  registerEscapeHandler(container, hideSearch)
-  await fillDocument(data)
+  registerEscapeHandler(container, () => {
+    if (container?.classList.contains("active")) hideSearch()
+  })
+  // start the download as soon as someone shows interest, so results are ready when they type
+  const warmUp = () => void ready().catch(() => {})
+  searchButton?.addEventListener("pointerenter", warmUp, { once: true })
+  searchButton?.addEventListener("focus", warmUp, { once: true })
+  window.addCleanup(() => {
+    searchButton?.removeEventListener("pointerenter", warmUp)
+    searchButton?.removeEventListener("focus", warmUp)
+  })
 })
-
-/**
- * Fills flexsearch document with data
- * @param index index to fill
- * @param data data to fill index with
- */
-async function fillDocument(data: { [key: FullSlug]: ContentDetails }) {
-  let id = 0
-  const promises: Array<Promise<unknown>> = []
-  for (const [slug, fileData] of Object.entries<ContentDetails>(data)) {
-    promises.push(
-      index.addAsync(id++, {
-        id,
-        slug: slug as FullSlug,
-        title: fileData.title,
-        content: fileData.content,
-        tags: fileData.tags,
-      }),
-    )
-  }
-
-  return await Promise.all(promises)
-}

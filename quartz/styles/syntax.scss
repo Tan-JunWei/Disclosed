@@ -4,7 +4,7 @@ code[data-theme*=" "] {
 }
 
 code[data-theme*=" "] span {
-  color: var(--shiki-light);
+  color: color-mix(in srgb, var(--shiki-light) 88%, #202d35);
 }
 
 [saved-theme="dark"] code[data-theme*=" "] {
@@ -14,4 +14,13 @@ code[data-theme*=" "] span {
 
 [saved-theme="dark"] code[data-theme*=" "] span {
   color: var(--shiki-dark);
+}
+
+// Fenced code uses the dark token palette in both page themes.
+[saved-theme="dark"] pre > code[data-theme*=" "],
+[saved-theme="dark"] pre > code[data-theme*=" "] span {
+  color: var(--shiki-dark, #d4d4d4);
+}
+pre > code[data-theme*=" "] {
+  background-color: transparent;
 }

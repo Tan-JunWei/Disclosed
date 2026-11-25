@@ -12,37 +12,64 @@ function setupExplorerToggle() {
   const backdrop = document.getElementById("explorer-backdrop")
   const closeButton = document.getElementById("explorer-close")
   const explorerContent = document.getElementById("explorer-content")
-  if (!toggle) return
+  const drawer = document.querySelector<HTMLElement>(".explorer")
+  if (!toggle || !drawer) return
+  const mobile = () => getComputedStyle(drawer!).position === "fixed"
+  function syncDrawer() {
+    drawer!.inert = mobile() && !isExplorerOpen()
+  }
+  function change(open: boolean, focus = true) {
+    setToggleState(toggle!, open)
+    syncDrawer()
+    if (focus) (open ? closeButton : toggle)?.focus()
+  }
 
-  setToggleState(toggle, false)
+  change(false, false)
 
   function handleToggleClick(evt: MouseEvent) {
     evt.stopPropagation()
-    setToggleState(toggle!, !isExplorerOpen())
+    change(!isExplorerOpen())
   }
 
   function handleBackdropClick() {
-    setToggleState(toggle!, false)
+    change(false)
   }
 
   function handleCloseClick(evt: MouseEvent) {
     evt.stopPropagation()
-    setToggleState(toggle!, false)
+    change(false)
   }
 
   function handleKeydown(evt: KeyboardEvent) {
-    if (evt.key === "Escape" && isExplorerOpen()) {
-      setToggleState(toggle!, false)
+    if (!isExplorerOpen()) return
+    if (evt.key === "Escape") change(false)
+    if (evt.key === "Tab" && mobile()) {
+      const elements = [...drawer!.querySelectorAll<HTMLElement>("a[href], button")].filter(
+        (element) =>
+          !element.closest("[inert]") &&
+          element.getClientRects().length > 0 &&
+          element.tabIndex >= 0,
+      )
+      const first = elements[0]
+      const last = elements.at(-1)
+      if (evt.shiftKey && document.activeElement === first) {
+        evt.preventDefault()
+        last?.focus()
+      } else if (!evt.shiftKey && document.activeElement === last) {
+        evt.preventDefault()
+        first?.focus()
+      }
     }
   }
 
   function handleContentClick(evt: MouseEvent) {
     const target = evt.target as HTMLElement
     if (target.closest("a")) {
-      setToggleState(toggle!, false)
+      change(false)
     }
   }
 
+  window.addEventListener("resize", syncDrawer)
   toggle.addEventListener("click", handleToggleClick)
   backdrop?.addEventListener("click", handleBackdropClick)
   closeButton?.addEventListener("click", handleCloseClick)
@@ -50,6 +77,7 @@ function setupExplorerToggle() {
   explorerContent?.addEventListener("click", handleContentClick)
 
   window.addCleanup(() => {
+    window.removeEventListener("resize", syncDrawer)
     toggle.removeEventListener("click", handleToggleClick)
     backdrop?.removeEventListener("click", handleBackdropClick)
     closeButton?.removeEventListener("click", handleCloseClick)

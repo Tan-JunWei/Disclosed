@@ -1,0 +1,1088 @@
+.home-page .lab-hero {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  overflow: hidden;
+  border: 1px solid #2b3642;
+  border-radius: 10px;
+  background: #0b1016;
+  color: #e3e8ee;
+}
+
+.lab-hero-copy {
+  align-self: center;
+  min-width: 0;
+  padding: 1.75rem 0 1.75rem 1.75rem;
+
+  h1 {
+    margin: 1.1rem 0 1rem;
+    font-family: var(--headerFont);
+    font-size: 2.25rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    line-height: 1.15;
+    color: #edf1f5;
+  }
+}
+
+.home-page a.lab-owner {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.25rem 0.8rem 0.25rem 0.25rem;
+  border: 1px solid #26323e;
+  border-radius: 999px;
+  background: #0f161e;
+  color: #e3e8ee;
+  font-family: var(--bodyFont);
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease;
+
+  &:hover {
+    border-color: #49627b;
+    background: #131d28;
+    color: #e3e8ee;
+
+    .lab-avatar {
+      border-color: #a2c1df;
+    }
+    .lab-owner-role {
+      color: #a4c9e7;
+    }
+  }
+}
+
+.home-page .lab-avatar {
+  display: block;
+  width: 2.5rem;
+  height: 2.5rem;
+  margin: 0;
+  flex-shrink: 0;
+  border: 1px solid #3b4d5f;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #f1f1ef;
+  box-shadow: none;
+  cursor: inherit;
+  transition: border-color 0.2s ease;
+}
+
+.lab-owner-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  line-height: 1.2;
+}
+
+.lab-owner-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: #e3e8ee;
+}
+
+.lab-owner-role {
+  font-size: 0.7rem;
+  font-weight: 400;
+  color: #8fa0b2;
+  transition: color 0.2s ease;
+}
+
+.lab-description {
+  max-width: 17rem;
+  margin: 0;
+  hyphens: manual;
+  font-size: 0.97rem;
+  line-height: 1.7;
+  color: #a9b3bf;
+}
+
+.lab-hero-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1.4rem;
+}
+
+.home-page a.lab-explore,
+.home-page a.lab-created {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  height: 2.5rem;
+  padding: 0 0.85rem;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.home-page a.lab-explore {
+  border-color: #6f94b8;
+  background: #b9d3ec;
+  color: #0b1016;
+
+  .hd-kpi-arrow {
+    position: static;
+    width: 0.9rem;
+    height: 0.9rem;
+    color: currentColor;
+    transition: transform 0.2s ease;
+  }
+
+  &:hover {
+    border-color: #d6e6f6;
+    background: #d6e6f6;
+    color: #0b1016;
+
+    .hd-kpi-arrow {
+      transform: translate(2px, -2px);
+    }
+  }
+}
+
+.home-page a.lab-created {
+  border-color: #33475b;
+  background: transparent;
+  color: #c3d0dd;
+
+  .lab-created-arrow {
+    transition: transform 0.2s ease;
+  }
+
+  &:hover {
+    border-color: #6f94b8;
+    background: #131d28;
+    color: #edf1f5;
+
+    .lab-created-arrow {
+      transform: translateX(3px);
+    }
+  }
+}
+
+.lab-visual {
+  position: relative;
+  width: 100%;
+  height: 310px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.lab-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.lab-scene-fallback {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 82%;
+  max-width: 260px;
+  height: auto;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  filter: drop-shadow(0 0 5px #9bc7ed22);
+}
+
+// The wireframe is a failure fallback, not a loading placeholder: it is invisible while the scene
+// loads (a flat drawing that then swaps for the real first frame reads as a glitch) and appears
+// only when the scene reports it cannot run (`data-scene-ready="false"`) or scripting is off (below).
+.lab-scene-fallback {
+  opacity: 0;
+}
+
+.lab-hero[data-scene-ready="false"] .lab-scene-fallback {
+  opacity: 1;
+}
+
+// no JavaScript at all: nothing will ever draw the scene, so show the drawing straight away
+// (a media query, not <noscript>, because the SPA router would copy a <noscript><style> into the
+// live DOM, where it applies and would pin the fallback on top of the working scene)
+@media (scripting: none) {
+  .lab-scene-fallback {
+    opacity: 1;
+  }
+}
+
+// the real first frame eases in once it is drawn
+.lab-hero[data-scene-ready="true"] .lab-canvas {
+  animation: lab-canvas-in 0.4s ease-out both;
+}
+
+@keyframes lab-canvas-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.lab-hero :focus-visible {
+  outline: 2px solid #a6c7e4;
+  outline-offset: 2px;
+}
+
+.lab-motto {
+  position: relative;
+  grid-column: 1 / -1;
+  margin: 0 1.75rem;
+  padding: 1.1rem 0 1.3rem 1.1rem;
+  border-top: 1px solid #26323e;
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 1.25rem;
+    bottom: 1.4rem;
+    left: 0;
+    width: 2px;
+    border-radius: 2px;
+    background: linear-gradient(to bottom, #8fb7dc, #a99be0);
+    opacity: 0.8;
+  }
+
+  blockquote {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    font-family: "Noto Serif SC", "Source Han Serif SC", "Songti SC", "STSong", "SimSun", serif;
+    font-size: 1.15rem;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    line-height: 1.6;
+    color: #e3e8ee;
+  }
+
+  figcaption {
+    margin-top: 0.3rem;
+    max-width: 40rem;
+    font-size: 0.78rem;
+    line-height: 1.65;
+    color: #8fa0b2;
+  }
+}
+
+/* Reticle cursor, only mounted for fine pointers without reduced motion. */
+.lab-hero.has-cursor {
+  cursor: none;
+
+  a,
+  button {
+    cursor: pointer;
+  }
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+    background: radial-gradient(
+      220px circle at var(--cx, 50%) var(--cy, 50%),
+      rgb(140 185 230 / 3.5%),
+      transparent 70%
+    );
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  &.cursor-active::after {
+    opacity: 1;
+  }
+}
+
+.lab-cursor {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 3;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  color: #a6c7e4;
+}
+
+.lab-hero.cursor-active .lab-cursor {
+  opacity: 1;
+}
+
+.lab-cursor-ring,
+.lab-cursor-dot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
+  will-change: transform;
+}
+
+.lab-cursor-ring {
+  width: 34px;
+  height: 34px;
+  margin: -17px 0 0 -17px;
+  border: 1px solid rgb(166 199 228 / 42%);
+  border-radius: 50%;
+  transition:
+    width 0.25s ease,
+    height 0.25s ease,
+    margin 0.25s ease,
+    border-color 0.25s ease,
+    background-color 0.25s ease;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: -6px;
+    background:
+      linear-gradient(currentColor, currentColor) 50% 0 / 1px 5px no-repeat,
+      linear-gradient(currentColor, currentColor) 50% 100% / 1px 5px no-repeat,
+      linear-gradient(currentColor, currentColor) 0 50% / 5px 1px no-repeat,
+      linear-gradient(currentColor, currentColor) 100% 50% / 5px 1px no-repeat;
+    animation: lab-cursor-spin 9s linear infinite;
+  }
+}
+
+.lab-cursor-dot {
+  width: 4px;
+  height: 4px;
+  margin: -2px 0 0 -2px;
+  border-radius: 50%;
+  background: #e3edf6;
+  box-shadow: 0 0 3px rgb(166 199 228 / 30%);
+  transition: opacity 0.2s ease;
+}
+
+.lab-hero.cursor-link .lab-cursor-ring {
+  width: 48px;
+  height: 48px;
+  margin: -24px 0 0 -24px;
+  border-color: rgb(166 199 228 / 80%);
+  background: rgb(166 199 228 / 4%);
+}
+
+.lab-hero.cursor-link .lab-cursor-dot {
+  opacity: 0;
+}
+
+.lab-hero.cursor-down .lab-cursor-ring {
+  width: 24px;
+  height: 24px;
+  margin: -12px 0 0 -12px;
+  border-color: #cfe2f4;
+}
+
+@keyframes lab-cursor-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// Light theme. The hero is not a dark panel dropped onto a light page: it becomes the same warm
+// paper as the cards (the scene draws its glow as ink on that paper, see compositeFragment), with
+// the site's deep blue and violet doing the work the pale blue glow does at night.
+:root[saved-theme="light"] {
+  .home-page .lab-hero {
+    border-color: color-mix(in srgb, var(--border) 75%, transparent);
+    background: #fafaf7;
+    box-shadow: var(--surface-shadow);
+    color: var(--darkgray);
+  }
+
+  .lab-hero-copy h1 {
+    color: var(--dark);
+  }
+
+  .home-page a.lab-owner {
+    border-color: color-mix(in srgb, var(--border) 70%, transparent);
+    background: var(--light);
+    color: var(--dark);
+
+    &:hover {
+      border-color: color-mix(in srgb, var(--secondary) 45%, var(--border));
+      background: color-mix(in srgb, var(--secondary) 5%, #fafaf7);
+      color: var(--dark);
+
+      .lab-avatar {
+        border-color: var(--secondary);
+      }
+      .lab-owner-role {
+        color: var(--secondary);
+      }
+    }
+  }
+
+  .home-page .lab-avatar {
+    border-color: var(--border);
+  }
+
+  .lab-owner-name {
+    color: var(--dark);
+  }
+
+  .lab-owner-role {
+    color: var(--gray);
+  }
+
+  .lab-description {
+    color: var(--gray);
+  }
+
+  .home-page a.lab-explore {
+    border-color: var(--secondary);
+    background: var(--secondary);
+    color: #fafaf7;
+
+    &:hover {
+      border-color: color-mix(in srgb, var(--secondary) 82%, #000);
+      background: color-mix(in srgb, var(--secondary) 82%, #000);
+      color: #fafaf7;
+    }
+  }
+
+  .home-page a.lab-created {
+    border-color: color-mix(in srgb, var(--secondary) 30%, var(--border));
+    color: var(--darkgray);
+
+    &:hover {
+      border-color: var(--secondary);
+      background: color-mix(in srgb, var(--secondary) 6%, transparent);
+      color: var(--dark);
+    }
+  }
+
+  .lab-scene-fallback {
+    filter: none;
+
+    g {
+      stroke: var(--secondary);
+    }
+  }
+
+  .lab-hero :focus-visible {
+    outline-color: var(--secondary);
+  }
+
+  .lab-motto {
+    border-top-color: color-mix(in srgb, var(--border) 60%, transparent);
+
+    &::before {
+      background: linear-gradient(to bottom, var(--secondary), var(--tertiary));
+      opacity: 0.7;
+    }
+
+    blockquote {
+      color: var(--dark);
+    }
+
+    figcaption {
+      color: var(--gray);
+    }
+  }
+
+  .lab-hero.has-cursor::after {
+    background: radial-gradient(
+      220px circle at var(--cx, 50%) var(--cy, 50%),
+      rgb(40 87 115 / 4%),
+      transparent 70%
+    );
+  }
+
+  .lab-cursor {
+    color: var(--secondary);
+  }
+
+  .lab-cursor-ring {
+    border-color: rgb(40 87 115 / 40%);
+  }
+
+  .lab-cursor-dot {
+    background: var(--secondary);
+    box-shadow: none;
+  }
+
+  .lab-hero.cursor-link .lab-cursor-ring {
+    border-color: rgb(40 87 115 / 70%);
+    background: rgb(40 87 115 / 5%);
+  }
+
+  .lab-hero.cursor-down .lab-cursor-ring {
+    border-color: var(--secondary);
+  }
+}
+
+.lab-archive {
+  margin-top: 2.5rem;
+}
+
+.lab-archive-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+
+  h2 {
+    margin: 0;
+    font-family: var(--headerFont);
+    font-size: 1.2rem;
+    font-weight: 700;
+    letter-spacing: -0.005em;
+  }
+
+  > a {
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    font-weight: 600;
+
+    span {
+      margin-left: 0.4rem;
+    }
+  }
+}
+
+.lab-routes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
+// One repeating cycle of the four colours. Sliding it by exactly one period (`--flow` 0% to 60%)
+// lands on an identical frame, so the loop never jumps. It must be written on the animated element
+// itself: a custom property holding it would resolve `--flow` once, where it was defined.
+@function flow-gradient($angle, $p) {
+  @return repeating-linear-gradient(
+    $angle,
+    var(--#{$p}-a) var(--flow),
+    var(--#{$p}-b) calc(var(--flow) + 15%),
+    var(--#{$p}-c) calc(var(--flow) + 30%),
+    var(--#{$p}-d) calc(var(--flow) + 45%),
+    var(--#{$p}-a) calc(var(--flow) + 60%)
+  );
+}
+
+a.lab-route {
+  --route-accent: var(--secondary);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 1.4rem 1.5rem 1.2rem;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  // a gentle wash of the accent colour that fades out from the top-right corner
+  background: linear-gradient(
+      225deg,
+      color-mix(in srgb, var(--route-accent) 24%, transparent),
+      transparent 65%
+    ),
+    var(--surface);
+  box-shadow: var(--surface-shadow);
+  color: var(--darkgray);
+  font-weight: 400;
+  overflow: hidden;
+  isolation: isolate;
+  transition:
+    border-color 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+
+  &[data-accent="sword"] {
+    --route-accent: var(--tertiary);
+  }
+  &[data-accent="bug"] {
+    --route-accent: hsl(7 68% 52%);
+  }
+  // "All writeups" swaps the grid lines for a soft patch of coloured squares (a pastel gradient
+  // through peach, pink, aqua and mint), so the way into every post stands apart at a glance
+  &[data-accent="compass"]::before {
+    background-image: flow-gradient(205deg, tile);
+    background-size: auto;
+    animation: tile-flow 9s linear infinite;
+    // two masks cut the gradient into squares with 3px gaps, the third fades the patch out
+    -webkit-mask-image: linear-gradient(90deg, transparent 3px, #000 3px),
+      linear-gradient(transparent 3px, #000 3px),
+      radial-gradient(circle at 100% 0%, #000 0%, transparent 70%);
+    mask-image: linear-gradient(90deg, transparent 3px, #000 3px),
+      linear-gradient(transparent 3px, #000 3px),
+      radial-gradient(circle at 100% 0%, #000 0%, transparent 70%);
+    -webkit-mask-size:
+      20px 20px,
+      20px 20px,
+      100% 100%;
+    mask-size:
+      20px 20px,
+      20px 20px,
+      100% 100%;
+    -webkit-mask-position:
+      right -3px top -3px,
+      right -3px top -3px,
+      0 0;
+    mask-position:
+      right -3px top -3px,
+      right -3px top -3px,
+      0 0;
+    -webkit-mask-composite: source-in, source-in;
+    mask-composite: intersect;
+    opacity: var(--tile-opacity);
+  }
+  // no corner wash here, so the pastels stay clean
+  &[data-accent="compass"] {
+    background: var(--surface);
+    border-color: transparent;
+
+    // the border carries the same colours, held still. The button flows with the squares and title
+    &::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      padding: 1px;
+      border-radius: inherit;
+      background: var(--ink-still);
+      -webkit-mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor;
+      mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+      mask-composite: exclude;
+      opacity: 0.55;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+
+    .lab-route-cta {
+      position: relative;
+      border-color: transparent;
+      background-image: flow-gradient(90deg, ink);
+      background-size: 300% 100%;
+      animation: tile-flow 9s linear infinite;
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+
+      &::before {
+        content: "";
+        position: absolute;
+        inset: -1px;
+        padding: 1px;
+        border-radius: inherit;
+        background-image: flow-gradient(90deg, ink);
+        background-size: 300% 100%;
+        animation: tile-flow 9s linear infinite;
+        -webkit-mask:
+          linear-gradient(#000 0 0) content-box,
+          linear-gradient(#000 0 0);
+        -webkit-mask-composite: xor;
+        mask:
+          linear-gradient(#000 0 0) content-box,
+          linear-gradient(#000 0 0);
+        mask-composite: exclude;
+        opacity: 0.75;
+      }
+    }
+
+    &:hover,
+    &:focus-visible {
+      border-color: transparent;
+
+      &::after {
+        opacity: 1;
+      }
+      .lab-route-cta {
+        -webkit-background-clip: border-box;
+        background-clip: border-box;
+        border-color: transparent;
+        color: var(--light);
+      }
+    }
+
+    // the count and title carry the same flowing gradient, in deeper shades so they stay readable
+    .lab-route-num,
+    h3 {
+      width: fit-content;
+      background-image: flow-gradient(90deg, ink);
+      // stretched so the short title shows a soft blend of two colours rather than four bands
+      background-size: 300% 100%;
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      animation: tile-flow 9s linear infinite;
+    }
+  }
+  &[data-accent="compass"]:hover::before,
+  &[data-accent="compass"]:focus-visible::before {
+    opacity: calc(var(--tile-opacity) + 0.12);
+  }
+  &[data-accent="lens"] {
+    --route-accent: hsl(84 62% 36%);
+  }
+
+  // the grid motif: a patch of fine lines in the top-right corner, faded out with a mask so it
+  // reads as a texture behind the illustration rather than a background for the whole card
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    z-index: -1;
+    width: 70%;
+    height: 75%;
+    background-image: linear-gradient(
+        color-mix(in srgb, var(--route-accent) 42%, transparent) 1px,
+        transparent 1px
+      ),
+      linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--route-accent) 42%, transparent) 1px,
+        transparent 1px
+      );
+    background-size: 20px 20px;
+    background-position: right top;
+    -webkit-mask-image: radial-gradient(circle at 100% 0%, #000 0%, transparent 70%);
+    mask-image: radial-gradient(circle at 100% 0%, #000 0%, transparent 70%);
+    opacity: 0.9;
+    transition: opacity 0.25s ease;
+  }
+
+  h3 {
+    margin: 0.15rem 0 0.35rem;
+    font-family: var(--headerFont);
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: 0;
+    color: var(--dark);
+  }
+
+  p {
+    margin: 0 0 0.9rem;
+    max-width: 30rem;
+    font-size: 0.8rem;
+    line-height: 1.55;
+    color: var(--gray);
+  }
+
+  &:hover,
+  &:focus-visible {
+    border-color: var(--route-accent);
+    transform: translateY(-3px);
+    box-shadow: 0 12px 30px -14px color-mix(in srgb, var(--route-accent) 60%, transparent);
+
+    &::before {
+      opacity: 1;
+    }
+    .lab-route-art {
+      transform: translateY(-2px) rotate(-3deg) scale(1.05);
+    }
+    .lab-route-cta {
+      background-color: var(--route-accent);
+      border-color: var(--route-accent);
+      color: var(--light);
+
+      span {
+        transform: translateX(3px);
+      }
+    }
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--route-accent);
+    outline-offset: 2px;
+  }
+}
+
+// the section's illustration, sitting in the corner over the grid motif
+// the compass is painted with `#compass-hue` (Home.tsx), whose stops each cycle through the ink
+// colours a quarter of a turn apart, so the gradient appears to flow around the icon
+.lab-route[data-accent="compass"] .lab-route-art {
+  [stroke="currentColor"] {
+    stroke: url(#compass-hue);
+  }
+  [fill="currentColor"],
+  text {
+    fill: url(#compass-hue);
+  }
+  .fill {
+    fill: color-mix(in srgb, var(--ink-c) 12%, transparent);
+
+    &.strong {
+      fill: color-mix(in srgb, var(--ink-b) 30%, transparent);
+    }
+  }
+  stop {
+    animation: ink-stop 9s linear infinite;
+  }
+  @for $i from 1 through 3 {
+    stop:nth-child(#{$i + 1}) {
+      animation-delay: -#{$i * 2.25}s;
+    }
+  }
+}
+
+.lab-route[data-accent="compass"] .lab-route-art {
+  width: 4.3rem;
+  height: 4.3rem;
+  margin: -0.35rem 0 0.35rem -0.35rem;
+}
+
+.lab-route-art {
+  align-self: flex-start;
+  width: 3.6rem;
+  height: 3.6rem;
+  margin-bottom: 0.5rem;
+  color: var(--route-accent);
+  transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.4, 1);
+
+  .fill {
+    fill: color-mix(in srgb, var(--route-accent) 16%, transparent);
+    stroke: none;
+
+    &.strong {
+      fill: color-mix(in srgb, var(--route-accent) 38%, transparent);
+    }
+  }
+  .spark {
+    fill: var(--route-accent);
+  }
+  text {
+    fill: var(--route-accent);
+  }
+}
+
+.lab-route-stat {
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  margin: 0.2rem 0 0.1rem;
+}
+
+.lab-route-num {
+  font-family: var(--headerFont);
+  font-size: 1.6rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--route-accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.lab-route-noun {
+  font-size: 0.76rem;
+  color: var(--gray);
+}
+
+.lab-route-tags {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow: hidden;
+  gap: 0.3rem;
+  margin: 0 0 1.1rem;
+  padding: 0;
+  list-style: none;
+
+  li {
+    flex-shrink: 0;
+    margin: 0;
+    padding: 0.12rem 0.55rem;
+    white-space: nowrap;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    color: var(--darkgray);
+    background-color: color-mix(in srgb, var(--darkgray) 7%, transparent);
+  }
+}
+
+.lab-route-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  align-self: flex-start;
+  margin-top: auto;
+  padding: 0.36rem 0.8rem;
+  border: 1px solid color-mix(in srgb, var(--route-accent) 45%, var(--border));
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--route-accent);
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+
+  span {
+    transition: transform 0.2s ease;
+  }
+}
+
+@media (max-width: 600px) {
+  .home-page .lab-hero {
+    grid-template-columns: 1fr;
+  }
+  .lab-motto {
+    margin: 0 1.5rem;
+  }
+  .lab-hero-copy {
+    padding: 1.5rem 1.5rem 0;
+    h1 {
+      font-size: 2rem;
+    }
+  }
+  .lab-description {
+    max-width: 24rem;
+  }
+  .lab-visual {
+    height: 275px;
+  }
+  .lab-archive-heading {
+    align-items: flex-start;
+    h2 {
+      font-size: 1.05rem;
+    }
+  }
+  .lab-routes {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lab-hero *,
+  .lab-hero {
+    transition: none !important;
+  }
+  .lab-hero .hd-kpi-arrow,
+  .lab-hero .lab-created-arrow {
+    transform: none !important;
+  }
+}
+
+// the CTF Writeups page: an intro, then one card per event
+.ctf-hub-intro {
+  margin-bottom: 1.4rem;
+}
+
+.ctf-hub-routes {
+  margin-top: 0;
+}
+
+// show every category, wrapping instead of cutting the list off like the compact home cards
+.lab-route-tags.ctf-hub-tags {
+  flex-wrap: wrap;
+  overflow: visible;
+}
+
+// every logo sits centred in a slot of the same height, so a round mark and a tall one line up
+.ctf-hub-logo-slot {
+  display: flex;
+  align-items: center;
+  align-self: flex-start;
+  height: 5rem;
+  margin: 0 0 0.6rem;
+}
+
+.ctf-hub-logo {
+  width: auto;
+  max-width: 7rem;
+  object-fit: contain;
+  transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.4, 1);
+}
+
+a.lab-route:hover .ctf-hub-logo,
+a.lab-route:focus-visible .ctf-hub-logo {
+  transform: translateY(-2px) scale(1.05);
+}
+
+// a logo with light lettering comes in two versions, one per theme
+.ctf-hub-logo.for-dark {
+  display: none;
+}
+
+:root[saved-theme="dark"] {
+  .ctf-hub-logo.for-light {
+    display: none;
+  }
+  .ctf-hub-logo.for-dark {
+    display: block;
+  }
+}
+
+// In light theme the text, icon, border and button shades are clean versions of the pastels at
+// about the same perceived lightness (oklch), with enough chroma that none turns brown or grey.
+// the pastel squares behind "All writeups": peach, coral pink, aqua and mint, chosen to sit apart from
+// the other cards' blue, lime, violet and red. Brighter but fainter in dark theme so they don't glare
+:root {
+  --tile-a: hsl(28 82% 78%);
+  --tile-b: hsl(345 72% 82%);
+  --tile-c: hsl(188 62% 74%);
+  --tile-d: hsl(152 50% 75%);
+  --tile-opacity: 0.85;
+  --ink-a: oklch(0.7 0.14 40);
+  --ink-b: oklch(0.68 0.15 5);
+  --ink-c: oklch(0.66 0.1 215);
+  --ink-d: oklch(0.68 0.12 175);
+  --ink-still: linear-gradient(
+    100deg,
+    var(--ink-a),
+    var(--ink-b) 35%,
+    var(--ink-c) 70%,
+    var(--ink-d)
+  );
+}
+:root[saved-theme="dark"] {
+  --tile-a: hsl(28 62% 62%);
+  --tile-b: hsl(345 52% 66%);
+  --tile-c: hsl(188 46% 56%);
+  --tile-d: hsl(152 38% 56%);
+  --tile-opacity: 0.42;
+  --ink-a: hsl(28 70% 72%);
+  --ink-b: hsl(345 62% 76%);
+  --ink-c: hsl(188 52% 66%);
+  --ink-d: hsl(152 42% 64%);
+}
+@property --flow {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 0%;
+}
+@keyframes tile-flow {
+  to {
+    --flow: 60%;
+  }
+}
+@keyframes ink-stop {
+  0%,
+  100% {
+    stop-color: var(--ink-a);
+  }
+  25% {
+    stop-color: var(--ink-b);
+  }
+  50% {
+    stop-color: var(--ink-c);
+  }
+  75% {
+    stop-color: var(--ink-d);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lab-route[data-accent="compass"]::before,
+  .lab-route[data-accent="compass"] .lab-route-num,
+  .lab-route[data-accent="compass"] h3,
+  .lab-route[data-accent="compass"] .lab-route-cta,
+  .lab-route[data-accent="compass"] .lab-route-cta::before,
+  .lab-route[data-accent="compass"] stop {
+    animation: none;
+  }
+}

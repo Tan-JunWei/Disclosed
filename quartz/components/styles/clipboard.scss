@@ -1,36 +1,118 @@
+// Colours follow the code block they sit on: the light theme's pale surface and green-grey header,
+// or the dark theme's navy.
+:root {
+  --copy-fg: #40545d;
+  --copy-bg: var(--light);
+  --copy-border: var(--border);
+  --copy-hover-bg: #e6ebe9;
+  --copy-accent: #285773;
+  --copy-ok: #1a7f37;
+  --copy-fail: #cf222e;
+  --copy-fail-fg: #cf222e;
+}
+
+:root[saved-theme="dark"] {
+  --copy-fg: #c7d3e3;
+  --copy-bg: #222d3d;
+  --copy-border: #47566c;
+  --copy-hover-bg: #30415a;
+  --copy-accent: #9ecbff;
+  --copy-ok: #3fb950;
+  --copy-fail: #f85149;
+  --copy-fail-fg: #ff7b72;
+}
+
 .clipboard-button {
   position: absolute;
   display: flex;
-  float: right;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+  top: 0;
   right: 0;
-  padding: 0.4rem;
-  margin: 0.3rem;
-  color: var(--gray);
-  border-color: var(--dark);
-  background-color: var(--light);
-  border: 1px solid;
-  border-radius: 5px;
-  opacity: 0;
-  transition: 0.2s;
+  padding: 0.45rem;
+  margin: 0.45rem;
+  color: var(--copy-fg);
+  background: var(--copy-bg);
+  border: 1px solid var(--copy-border);
+  border-radius: 6px;
+  opacity: 0.75;
+  cursor: pointer;
+  transition:
+    opacity 150ms ease,
+    background-color 150ms ease,
+    border-color 150ms ease;
 
-  & > svg {
-    fill: var(--light);
-    filter: contrast(0.3);
+  .clipboard-icon {
+    display: flex;
+  }
+
+  & svg {
+    fill: currentColor;
+  }
+
+  // read aloud by screen readers, never shown
+  .clipboard-status {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
   }
 
   &:hover {
-    cursor: pointer;
-    border-color: var(--secondary);
+    background: var(--copy-hover-bg);
+    border-color: var(--copy-accent);
+    opacity: 1;
+  }
+  &:focus-visible {
+    outline: 2px solid var(--copy-accent);
+    outline-offset: 2px;
+    opacity: 1;
+  }
+}
+pre:hover > .clipboard-button {
+  opacity: 1;
+}
+
+// After a successful copy the whole button turns green and shows a tick for a couple of seconds.
+// If copying is not possible it turns red with a cross instead.
+.clipboard-button {
+  &[data-state="copied"],
+  &[data-state="copied"]:hover {
+    color: var(--copy-ok);
+    background: color-mix(in srgb, var(--copy-ok) 20%, var(--copy-bg));
+    border-color: var(--copy-ok);
+    opacity: 1;
+    animation: clipboard-pop 220ms ease-out;
   }
 
-  &:focus {
-    outline: 0;
+  &[data-state="failed"],
+  &[data-state="failed"]:hover {
+    color: var(--copy-fail-fg);
+    background: color-mix(in srgb, var(--copy-fail) 18%, var(--copy-bg));
+    border-color: var(--copy-fail);
+    opacity: 1;
   }
 }
 
-pre {
-  &:hover > .clipboard-button {
-    opacity: 1;
-    transition: 0.2s;
+@keyframes clipboard-pop {
+  0% {
+    transform: scale(0.86);
+  }
+  60% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .clipboard-button,
+  .clipboard-button[data-state] {
+    transition: none;
+    animation: none;
   }
 }

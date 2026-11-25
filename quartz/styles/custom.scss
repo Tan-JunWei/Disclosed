@@ -1,53 +1,88 @@
 @use "./base.scss";
+@use "./fonts.scss";
 
 code {
-    background: rgba(79, 197, 197, 0.25);
+  background: var(--highlight);
+}
+
+// Inline code is a quiet token rather than a button: a faint tint of the site's navy, a hairline
+// edge, normal weight and navy-leaning text, so a sentence full of commands and addresses still reads
+// as a sentence. Fenced code blocks and the compact metadata values keep their own styles.
+:root {
+  --inline-code-bg: color-mix(in srgb, var(--secondary) 8%, var(--surface));
+  --inline-code-border: color-mix(in srgb, var(--secondary) 17%, transparent);
+  --inline-code-fg: color-mix(in srgb, var(--secondary) 55%, var(--dark));
+}
+
+:root[saved-theme="dark"] {
+  --inline-code-bg: color-mix(in srgb, var(--secondary) 13%, var(--surface));
+  --inline-code-border: color-mix(in srgb, var(--secondary) 24%, transparent);
+  --inline-code-fg: color-mix(in srgb, var(--secondary) 35%, var(--dark));
+}
+
+article :not(pre) > code {
+  font-size: 0.86em;
+  font-weight: 400;
+  color: var(--inline-code-fg);
+  background: var(--inline-code-bg);
+  border: 1px solid var(--inline-code-border);
+  border-radius: 6px;
+  padding: 0.12em 0.38em;
+  // a hair of space so brackets and commas next to a token do not touch its edge
+  margin-inline: 0.08em;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+// code that is part of a link reads as the link
+article a > code {
+  color: inherit;
 }
 
 article img {
-    transition: all 0.3s ease-in-out;
-    transform-origin: center center;
-    cursor: zoom-in;
-    max-width: 100%;
-    position: relative;
-    border: 1px solid var(--border);
-    // shadow helps images stand out in light mode, not needed in dark mode
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease-in-out;
+  transform-origin: center center;
+  cursor: zoom-in;
+  max-width: 100%;
+  position: relative;
+  border: 1px solid var(--border);
+  // shadow helps images stand out in light mode, not needed in dark mode
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
 }
 
 :root[saved-theme="dark"] article img {
-    box-shadow: none;
+  box-shadow: none;
 }
 
 .zoom-active {
-    overflow: hidden;
+  overflow: hidden;
 }
 
 .zoom-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background-color: var(--lighterLight);
-    display: none;
-    opacity: 0;
-    transition: all 0.3s ease-in-out;
-    z-index: 5;
-    cursor: zoom-out;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: var(--lighterLight);
+  display: none;
+  opacity: 0;
+  transition: all 0.3s ease-in-out;
+  z-index: 5;
+  cursor: zoom-out;
 }
 
-.zoomed-img{
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-    border: 2px solid var(--secondary);
+.zoomed-img {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  border: 2px solid var(--secondary);
 }
 
 .zoom-active .zoom-overlay {
-    opacity: 1;
+  opacity: 1;
 }
 
 td {
@@ -61,15 +96,9 @@ pre > code > [data-line]::before {
 }
 
 .table-container > table {
-  table-layout: fixed;
   width: 100%;
   margin-left: 0;
   margin-right: 0;
-
-  th:first-child,
-  td:first-child {
-    width: 320px;
-  }
 }
 
 .table-container > table tbody tr {
@@ -82,63 +111,13 @@ pre > code > [data-line]::before {
 
 @media (max-width: 600px) {
   .table-container {
-    overflow-x: visible;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
   }
 
   .table-container > table {
-    display: block;
-    margin: 0.25rem 0;
-    padding: 0;
-    table-layout: auto;
-  }
-
-  .table-container > table thead {
-    display: none;
-  }
-
-  .table-container > table tbody {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .table-container > table tbody tr {
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 0.7rem 1rem;
-    transition: border-color 0.2s ease, background-color 0.2s ease;
-
-    &:last-child {
-      border-bottom: 1px solid var(--border);
-    }
-
-    &:hover {
-      border-color: var(--secondary);
-      background-color: color-mix(in srgb, var(--secondary) 5%, transparent);
-    }
-  }
-
-  .table-container > table tbody td {
-    display: block;
-    padding: 0;
-    border: none;
-    min-width: unset;
-    width: auto;
-    line-height: 1.6rem;
-  }
-
-  .table-container > table tbody td:first-child {
-    font-size: 0.95rem;
-    font-weight: 600;
-    padding-bottom: 0.3rem;
-  }
-
-  .table-container > table tbody td:last-child {
-    font-size: 0.82rem;
-    opacity: 0.75;
+    min-width: 32rem;
+    margin: 0.5rem 0;
   }
 }
 
@@ -151,11 +130,11 @@ figure.has-language-header {
   display: flex;
   align-items: center;
   gap: 0.38rem;
-  padding: 0.28rem 0.65rem;
-  background-color: color-mix(in srgb, var(--lightgray) 60%, var(--light));
-  border: 1px solid var(--border);
-  border-bottom: none;
-  border-radius: 5px 5px 0 0;
+  padding: 0.65rem 0.85rem;
+  background-color: #222b38;
+  border: 1px solid #364152;
+  border-bottom: 1px solid #364152;
+  border-radius: 9px 9px 0 0;
 
   .code-lang-icon-wrap {
     width: 0.9rem;
@@ -170,14 +149,15 @@ figure.has-language-header {
       height: 0.9rem;
       display: block;
       flex-shrink: 0;
-      color: var(--secondary);
+      color: #9ecbff;
     }
   }
 
   .code-language-name {
     font-size: 0.68rem;
     font-family: var(--codeFont);
-    color: var(--darkgray);
+    word-spacing: normal;
+    color: #c7d3e3;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.07em;
@@ -187,18 +167,6 @@ figure.has-language-header {
 
 pre > code {
   overflow-x: auto;
-}
-
-figure.has-language-header > pre {
-  margin-top: 0;
-  border-top: none;
-  border-top-left-radius: 0;
-  border-top-right-radius: 0;
-  padding-top: 0.4rem;
-}
-
-[saved-theme="dark"] .code-language-header {
-  background-color: color-mix(in srgb, var(--lightgray) 40%, var(--light));
 }
 
 #reading-progress-bar {
@@ -218,8 +186,8 @@ figure.has-language-header > pre {
   position: fixed;
   bottom: 2rem;
   right: 2rem;
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 2.75rem;
+  height: 2.75rem;
   border-radius: 50%;
   background-color: var(--secondary);
   color: var(--light);
@@ -230,7 +198,10 @@ figure.has-language-header > pre {
   justify-content: center;
   opacity: 0;
   transform: translateY(0.5rem);
-  transition: opacity 0.3s ease, transform 0.3s ease, background-color 0.2s ease;
+  transition:
+    opacity 0.3s ease,
+    transform 0.3s ease,
+    background-color 0.2s ease;
   z-index: 99;
   pointer-events: none;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
@@ -249,5 +220,304 @@ figure.has-language-header > pre {
     width: 1.2rem;
     height: 1.2rem;
     stroke: var(--light);
+  }
+}
+
+:root[saved-theme="dark"] pre:not(:has(> code.mermaid)) {
+  background: #181e28;
+  color: #d4d4d4;
+  border: 1px solid #364152;
+  border-radius: 9px;
+  box-shadow: 0 3px 12px rgb(0 0 0 / 8%);
+  color-scheme: dark;
+
+  > code {
+    background: transparent;
+    color: #d4d4d4;
+    padding-block: 1rem;
+    line-height: 1.7;
+    tab-size: 4;
+
+    > [data-line] {
+      padding-inline: 0.75rem 1rem;
+      &::before {
+        color: #8b99ad;
+      }
+      &[data-highlighted-line] {
+        background: #29364a;
+        border-left-color: #8abbef;
+      }
+    }
+    [data-highlighted-chars] {
+      background: #334563;
+    }
+    ::selection {
+      background-color: var(--selection-bg);
+      color: var(--selection-fg);
+    }
+  }
+}
+
+// Shared surfaces and text selection keep theme states calm and readable.
+:root {
+  --selection-bg: #d2e1e4;
+  --selection-fg: #202d35;
+  --surface: #fafaf7;
+  --surface-muted: #eaece9;
+  --surface-shadow: 0 2px 8px rgb(39 55 63 / 5%);
+}
+
+:root[saved-theme="dark"] {
+  --selection-bg: #31566c;
+  --selection-fg: #f1f4f5;
+  --surface: #151c23;
+  --surface-muted: #202a32;
+  --surface-shadow: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--secondary);
+  outline-offset: 3px;
+}
+
+article {
+  line-height: 1.7;
+}
+
+article p,
+article li {
+  line-height: 1.7;
+}
+
+article blockquote {
+  padding: 0.1rem 1rem;
+  background: var(--highlight);
+  border-radius: 0 5px 5px 0;
+}
+
+.table-container > table {
+  background: var(--surface);
+  font-family: var(--bodyFont);
+  font-size: 0.9rem;
+
+  th,
+  td {
+    padding: 0.6rem 0.75rem;
+    font-family: var(--bodyFont);
+    font-size: inherit;
+    line-height: 1.5;
+    letter-spacing: normal;
+    vertical-align: top;
+    word-break: normal;
+
+    & + th,
+    & + td {
+      border-left: 1px solid var(--border);
+    }
+  }
+
+  th {
+    background: var(--surface-muted);
+    border-bottom: 1px solid var(--border);
+    color: var(--dark);
+    font-weight: 600;
+  }
+
+  td {
+    color: var(--darkgray);
+    font-weight: 400;
+  }
+}
+
+:root:not([saved-theme="dark"]) {
+  .code-language-header {
+    background: #e6ebe9;
+    border-color: var(--border);
+    .code-language-name {
+      color: #40545d;
+    }
+    .code-lang-icon-wrap svg {
+      color: #285773;
+    }
+  }
+  pre:not(:has(> code.mermaid)) {
+    background: var(--surface);
+    border-color: var(--border);
+    box-shadow: var(--surface-shadow);
+    color-scheme: light;
+    > code {
+      background: transparent;
+      padding-block: 1rem;
+      line-height: 1.7;
+      tab-size: 4;
+      > [data-line] {
+        padding-inline: 0.75rem 1rem;
+        &::before {
+          color: #667781;
+        }
+        &[data-highlighted-line] {
+          background: #e3ecee;
+          border-left-color: var(--secondary);
+        }
+      }
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+// Keyboard users can jump past the sidebar (wordmark, search, theme toggle, explorer tree).
+.skip-link {
+  position: fixed;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 2000;
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  background: var(--dark);
+  color: var(--light);
+  font-weight: 600;
+  text-decoration: none;
+  // clipped to nothing (rather than parked off-screen) so no screenshot, print or reader mode can
+  // ever reveal it. Focusing it restores the full pill
+  clip-path: inset(50%);
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  white-space: nowrap;
+
+  &:focus,
+  &:focus-visible {
+    clip-path: none;
+    width: auto;
+    height: auto;
+    padding: 0.6rem 1rem;
+    overflow: visible;
+    outline: 2px solid var(--secondary);
+    outline-offset: 2px;
+    color: var(--light);
+  }
+}
+
+// <main> takes programmatic focus after the skip link and is not an interactive control
+#main-content:focus {
+  outline: none;
+}
+
+// ---- code blocks ------------------------------------------------------------------------------
+
+// A language header and the code under it read as one block. The code's top corners are square, it
+// shares the header's bottom edge instead of drawing a second line, and its bottom corners match the
+// header's 9px. The leading `:root` is only there to outrank the per-theme rules above.
+:root figure.has-language-header > pre:not(:has(> code.mermaid)) {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+  border-radius: 0 0 9px 9px;
+}
+
+:root {
+  --code-line-hover: color-mix(in srgb, #285773 8%, transparent);
+  --code-add: #2ea043;
+  --code-del: #f85149;
+  --code-hunk: #539bf5;
+}
+
+:root[saved-theme="dark"] {
+  --code-line-hover: rgb(138 187 239 / 9%);
+}
+
+// Hovering a line tints it from edge to edge to make it easy to follow. The tint is an inset shadow,
+// so it lies over whatever the line already has (a diff colour, a highlighted line) instead of
+// replacing it.
+pre:not(:has(> code.mermaid)) > code > [data-line] {
+  transition: box-shadow 120ms ease;
+}
+
+@media (hover: hover) {
+  :root pre:not(:has(> code.mermaid)) > code > [data-line]:hover {
+    box-shadow: inset 0 0 0 999px var(--code-line-hover);
+
+    &::before {
+      color: var(--darkgray);
+    }
+  }
+}
+
+// Diffs are coloured by default: green for additions, red for deletions, blue for hunk headers.
+:root pre:not(:has(> code.mermaid)) > code > [data-line] {
+  &[data-diff="add"] {
+    background-color: color-mix(in srgb, var(--code-add) 16%, transparent);
+    border-left-color: var(--code-add);
+
+    &::before {
+      color: color-mix(in srgb, var(--code-add) 80%, var(--gray));
+    }
+  }
+
+  &[data-diff="del"] {
+    background-color: color-mix(in srgb, var(--code-del) 16%, transparent);
+    border-left-color: var(--code-del);
+
+    &::before {
+      color: color-mix(in srgb, var(--code-del) 80%, var(--gray));
+    }
+  }
+
+  &[data-diff="hunk"] {
+    background-color: color-mix(in srgb, var(--code-hunk) 11%, transparent);
+    border-left-color: var(--code-hunk);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  pre:not(:has(> code.mermaid)) > code > [data-line] {
+    transition: none;
+  }
+}
+
+// An attachment that is not published (see plugins/transformers/unavailableAttachments.ts): the name
+// stays readable but is not a link, with a short note in place of the download.
+.attachment-unavailable {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  color: var(--gray);
+  cursor: not-allowed;
+  vertical-align: baseline;
+
+  svg {
+    width: 0.85em;
+    height: 0.85em;
+    flex-shrink: 0;
+  }
+
+  .attachment-name {
+    font-weight: 600;
+    text-decoration: line-through;
+    text-decoration-color: color-mix(in srgb, var(--gray) 55%, transparent);
+  }
+
+  .attachment-note {
+    font-size: 0.72em;
+    line-height: 1;
+    padding: 0.28em 0.6em;
+    border: 1px solid var(--lightgray);
+    border-radius: 999px;
+    background: var(--highlight);
+    white-space: nowrap;
   }
 }

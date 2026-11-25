@@ -5,15 +5,11 @@ import * as Component from "./quartz/components"
 export const sharedPageComponents: SharedLayout = {
   head: Component.Head(),
   header: [],
-  afterBody: [
-    Component.PrevNextNav(),
-    Component.BackToTop(),
-    Component.CodeLanguageLabel(),
-    Component.DynamicDate(),
-  ],
+  afterBody: [Component.PrevNextNav(), Component.BackToTop(), Component.DynamicDate()],
   footer: Component.Footer({
     links: {
-      GitHub: "https://github.com/Tan-JunWei/CTF-Writeups",
+      GitHub: "https://github.com/Tan-JunWei/Disclosed",
+      LinkedIn: "https://www.linkedin.com/in/jun-wei-tan",
     },
   }),
 }
@@ -24,15 +20,16 @@ export const defaultContentPageLayout: PageLayout = {
     Component.ReadingProgress(),
     Component.Breadcrumbs(),
     Component.ArticleTitle(),
-    Component.ContentMeta(),
-    Component.TagList(),
+    // post metadata, shown only on posts
+    Component.CaseHeader(),
+    // banner and remediation facts for vulnerability research posts, nothing elsewhere
+    Component.ResearchHeader(),
   ],
   left: [
     Component.ExplorerToggle(),
     Component.PageTitle(),
     Component.MobileOnly(Component.Spacer()),
     Component.Flex({ components: [Component.Darkmode(), Component.Search()] }),
-    // Component.RecentNotes({ title: "Recently Updated", limit: 2, showTags: false}),
     Component.Explorer(),
   ],
   right: [
@@ -42,9 +39,16 @@ export const defaultContentPageLayout: PageLayout = {
   ],
 }
 
+// Keep the home page free of note metadata while preserving the compact site layout.
+export const homePageLayout: PageLayout = {
+  ...defaultContentPageLayout,
+  beforeBody: [],
+  right: [Component.Graph()],
+}
+
 // components for pages that display lists of pages  (e.g. tags or folders)
 export const defaultListPageLayout: PageLayout = {
-  beforeBody: [Component.Breadcrumbs(), Component.ArticleTitle(), Component.ContentMeta()],
+  beforeBody: [Component.Breadcrumbs(), Component.ArticleTitle()],
   left: [
     Component.ExplorerToggle(),
     Component.PageTitle(),

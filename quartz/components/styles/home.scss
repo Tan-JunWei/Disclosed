@@ -1,8 +1,36 @@
 @use "../../styles/variables.scss" as *;
+@use "../../styles/surface.scss" as surface;
+@use "./hero.scss";
 
 // shared easing/duration for anything that flows to a new position rather than just fading
 $flow-duration: 0.22s;
 $flow-ease: cubic-bezier(0.16, 1, 0.3, 1);
+
+.home-page {
+  padding-top: $topSpacing;
+
+  .hd-kpi-num {
+    font-variant-numeric: tabular-nums;
+  }
+
+  > article:last-of-type li > a {
+    text-decoration: underline;
+    text-decoration-color: transparent;
+    text-underline-offset: 4px;
+    transition:
+      color 0.2s ease,
+      text-decoration-color 0.2s ease;
+
+    &:hover,
+    &:focus-visible {
+      text-decoration-color: currentColor;
+    }
+  }
+
+  @media (max-width: $fullPageWidth) {
+    padding-top: 2rem;
+  }
+}
 
 .chart-tooltip {
   position: absolute;
@@ -12,7 +40,9 @@ $flow-ease: cubic-bezier(0.16, 1, 0.3, 1);
   display: flex;
   flex-direction: column;
   gap: 0.1rem;
-  max-width: 13rem;
+  // sized to its content, up to a cap, then wrapping: a long label can never run out of the box
+  width: max-content;
+  max-width: min(17rem, calc(100vw - 1rem));
   padding: 0.36rem 0.65rem;
   border: 1px solid var(--border);
   border-radius: 7px;
@@ -21,7 +51,9 @@ $flow-ease: cubic-bezier(0.16, 1, 0.3, 1);
   font-family: var(--bodyFont);
   font-size: 0.76rem;
   font-weight: $semiBoldWeight;
-  white-space: nowrap;
+  line-height: 1.3;
+  white-space: normal;
+  overflow-wrap: break-word;
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.18);
   pointer-events: none;
   opacity: 0;
@@ -42,27 +74,40 @@ $flow-ease: cubic-bezier(0.16, 1, 0.3, 1);
   }
 }
 
-.hd-tt-month {
-  font-size: 0.68rem;
-  font-weight: $normalWeight;
-  color: var(--gray);
-}
-
-.hd-tt-total {
-  font-size: 0.82rem;
-}
-
-.hd-tt-delta {
-  color: var(--diff-easy);
-}
-
 .hd-dashboard {
-  margin: 2.2rem 0 2.6rem 0;
+  margin: 2.2rem 0 2.6rem;
   padding-top: 1.8rem;
   border-top: 1px solid var(--lightgray);
 
-  --chart-accent: color-mix(in srgb, var(--secondary) 80%, var(--gray) 20%);
-  --chart-highlight: var(--tertiary);
+  // Light theme keeps the dark theme's hues but at a mid lightness so large shapes stay vivid
+  // on the pale surface. The -ink variants are for small coloured text and sit a step deeper.
+  --diff-beginner: var(--diff-beginner-fill);
+  --diff-easy: var(--diff-easy-fill);
+  --diff-medium: var(--diff-medium-fill);
+  --diff-hard: var(--diff-hard-fill);
+  --diff-insane: var(--diff-insane-fill);
+  --diff-expert: var(--diff-expert-fill);
+  --diff-beginner-ink: hsl(199 78% 32%);
+  --diff-easy-ink: hsl(146 60% 29%);
+  --diff-medium-ink: hsl(40 94% 29%);
+  --diff-hard-ink: hsl(21 86% 40%);
+  --diff-insane-ink: hsl(352 70% 40%);
+  --diff-expert-ink: hsl(0 0% 28%);
+}
+
+:root[saved-theme="dark"] .hd-dashboard {
+  --diff-beginner: var(--diff-beginner-fill);
+  --diff-easy: var(--diff-easy-fill);
+  --diff-medium: var(--diff-medium-fill);
+  --diff-hard: var(--diff-hard-fill);
+  --diff-insane: var(--diff-insane-fill);
+  --diff-expert: var(--diff-expert-fill);
+  --diff-beginner-ink: var(--diff-beginner);
+  --diff-easy-ink: var(--diff-easy);
+  --diff-medium-ink: var(--diff-medium);
+  --diff-hard-ink: var(--diff-hard);
+  --diff-insane-ink: var(--diff-insane);
+  --diff-expert-ink: var(--diff-expert);
 }
 
 .hd-kpis {
@@ -76,34 +121,20 @@ $flow-ease: cubic-bezier(0.16, 1, 0.3, 1);
   }
 }
 
+// stat tiles and chart panels share the card system with the section cards
 .hd-kpi {
-  position: relative;
+  @include surface.card-surface(12%);
+  @include surface.card-grid(85%, 100%, 16px, 30%, 0.7);
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
   padding: 0.9rem 1rem;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background-color: color-mix(in srgb, var(--lightgray) 12%, var(--light));
 }
 
 a.hd-kpi {
+  @include surface.card-interactive(2px);
   color: inherit;
   font-weight: $normalWeight;
-  transition:
-    border-color 0.15s ease,
-    background-color 0.15s ease;
-
-  &:hover,
-  &:focus-visible {
-    border-color: var(--secondary);
-    background-color: color-mix(in srgb, var(--secondary) 6%, var(--light));
-  }
-
-  &:focus-visible {
-    outline: 2px solid var(--secondary);
-    outline-offset: 2px;
-  }
 
   &:hover .hd-kpi-arrow,
   &:focus-visible .hd-kpi-arrow {
@@ -149,7 +180,8 @@ a.hd-kpi {
   }
 }
 
-// repeats its own mobile collapse since an unconditional rule here would win the cascade over .hd-row's
+// Equal columns. This repeats its own mobile collapse, since an unconditional rule here would win
+// the cascade over .hd-row's.
 .hd-row-equal {
   grid-template-columns: 1fr 1fr;
 
@@ -159,26 +191,10 @@ a.hd-kpi {
 }
 
 .hd-panel {
-  padding: 1rem 1.1rem;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background-color: color-mix(in srgb, var(--lightgray) 12%, var(--light));
+  @include surface.card-surface(10%);
+  @include surface.card-grid(60%, 55%, 18px, 28%, 0.75);
+  padding: 1.05rem 1.2rem;
   min-width: 0;
-}
-
-.hd-panel-center {
-  display: flex;
-  flex-direction: column;
-
-  > *:last-child {
-    flex: 1;
-    display: flex;
-    align-items: center;
-
-    > * {
-      width: 100%;
-    }
-  }
 }
 
 .hd-panel-title {
@@ -188,88 +204,6 @@ a.hd-kpi {
   letter-spacing: 0.06em;
   font-weight: $semiBoldWeight;
   color: var(--gray);
-}
-
-.hd-bars {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.55rem;
-}
-
-.hd-bar-row {
-  --tag-l: var(--tag-light-l);
-
-  display: grid;
-  grid-template-columns: 5.8rem 1fr 3.3rem;
-  align-items: center;
-  gap: 0.6rem;
-  padding: 0.2rem 0.3rem;
-  margin: 0 -0.3rem;
-  border-radius: 6px;
-  color: inherit;
-  font-weight: $normalWeight;
-  transition: background-color 0.15s ease;
-
-  &:hover,
-  &:focus-visible {
-    background-color: color-mix(in srgb, var(--secondary) 7%, transparent);
-  }
-
-  &:focus-visible {
-    outline: 2px solid var(--secondary);
-    outline-offset: 1px;
-  }
-
-  &:hover .hd-bar-fill,
-  &:focus-visible .hd-bar-fill {
-    filter: brightness(1.12);
-  }
-}
-
-:root[saved-theme="dark"] .hd-bar-row {
-  --tag-l: var(--tag-dark-l);
-}
-
-.hd-bar-label {
-  font-size: 0.8rem;
-  color: var(--darkgray);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.hd-bar-track {
-  height: 0.5rem;
-  border-radius: 4px;
-  background-color: var(--lightgray);
-  overflow: hidden;
-}
-
-.hd-bar-fill {
-  display: block;
-  height: 100%;
-  border-radius: 4px;
-  background-color: hsl(var(--tag-hue) 62% var(--tag-l) / 1);
-  transition:
-    width 0.4s ease,
-    filter 0.15s ease;
-}
-
-.hd-bar-count {
-  font-size: 0.78rem;
-  font-weight: $semiBoldWeight;
-  color: var(--gray);
-  text-align: right;
-  white-space: nowrap;
-  font-variant-numeric: tabular-nums;
-}
-
-.hd-bar-pct {
-  font-weight: $normalWeight;
-  color: hsl(var(--tag-hue) 62% var(--tag-l) / 1);
 }
 
 .hd-diff-body {
@@ -388,287 +322,127 @@ a.hd-kpi {
 
 .hd-legend-pct {
   font-weight: $normalWeight;
-  opacity: 0.75;
+  opacity: 1;
 }
 
-.hd-timechart-body {
+// ---- Latest writeups
+.hd-latest {
+  margin-bottom: 1.2rem;
+}
+
+.hd-latest-home {
+  margin-top: 2.2rem;
+}
+
+.hd-latest-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.8rem;
+
+  @media all and (max-width: $tabletBreakpoint) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  @media all and (max-width: $mobileBreakpoint) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.hd-latest-card {
+  @include surface.card-surface(14%);
+  @include surface.card-grid(62%, 68%, 18px, 15%, 0.65);
+  @include surface.card-interactive;
+  @include surface.rated-card;
   display: flex;
-  gap: 0.6rem;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+  padding: 1.05rem 1.15rem 0.9rem;
+  color: inherit;
+  font-weight: $normalWeight;
 }
 
-.hd-timechart-ylabels {
-  position: relative;
-  flex-shrink: 0;
-  width: 2rem;
+.hd-latest-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
 }
 
-.hd-timechart-ylabel {
-  position: absolute;
-  right: 0;
-  transform: translateY(-50%);
+.hd-latest-chip {
+  --tag-l: calc(var(--tag-light-l) - 3%);
+  padding: 0.14rem 0.6rem;
+  border-radius: 999px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.7rem;
+  font-weight: $semiBoldWeight;
+  color: hsl(var(--tag-hue) 62% var(--tag-l));
+  background-color: hsl(var(--tag-hue) 62% var(--tag-l) / 0.14);
+}
+
+:root[saved-theme="dark"] .hd-latest-chip {
+  --tag-l: var(--tag-dark-l);
+}
+
+.hd-latest-rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.7rem;
+  text-transform: capitalize;
+  white-space: nowrap;
+  color: var(--gray);
+
+  i {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background-color: var(--gray);
+  }
+
+  @each $name in beginner, easy, medium, hard, insane, expert {
+    &[data-diff="#{$name}"] {
+      color: var(--diff-#{$name});
+
+      i {
+        background-color: var(--diff-#{$name}-fill);
+      }
+    }
+  }
+}
+
+.hd-latest-title {
+  hyphens: none;
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.3;
+  color: var(--dark);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.hd-latest-desc {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--gray);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.hd-latest-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: auto;
+  padding-top: 0.55rem;
   font-size: 0.72rem;
   color: var(--gray);
   font-variant-numeric: tabular-nums;
-}
-
-.hd-timechart-plot {
-  position: relative;
-  flex: 1;
-  min-width: 0;
-  aspect-ratio: 560 / 200;
-}
-
-.hd-area {
-  width: 100%;
-  height: 100%;
-  display: block;
-  overflow: visible;
-}
-
-.hd-timechart-xlabels {
-  position: relative;
-  height: 1.1rem;
-  margin: 0.5rem 0 0 calc(2rem + 0.6rem);
-}
-
-.hd-timechart-xlabel {
-  position: absolute;
-  top: 0;
-  font-size: 0.72rem;
-  color: var(--gray);
-  white-space: nowrap;
-}
-
-.hd-area-grid {
-  stroke: var(--lightgray);
-  stroke-width: 1;
-  stroke-dasharray: 4 4;
-}
-
-// eases in on mount. Opacity/transform only, not clip-path, which would distort
-// getBoundingClientRect() for the point hit-targets nested inside it
-.hd-area-reveal {
-  animation: hd-area-reveal 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-@keyframes hd-area-reveal {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-}
-
-.hd-area-line {
-  stroke: var(--chart-accent);
-  stroke-width: 2.5;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.hd-area-point {
-  outline: none;
-}
-
-.hd-area-dot {
-  fill: var(--chart-accent);
-  transform-box: fill-box;
-  transform-origin: center;
-  transition: transform 0.15s ease;
-}
-
-.hd-area-point:focus-visible .hd-area-dot {
-  transform: scale(1.8);
-}
-
-.hd-area-hitlayer {
-  pointer-events: all;
-  cursor: crosshair;
-}
-
-.hd-area-line-highlight {
-  stroke: var(--chart-highlight);
-  stroke-width: 3.5;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  opacity: 0;
-  filter:
-    drop-shadow(0 0 3px color-mix(in srgb, var(--chart-highlight) 90%, transparent))
-    drop-shadow(0 0 8px color-mix(in srgb, var(--chart-highlight) 65%, transparent));
-  pointer-events: none;
-  transition: opacity 0.15s ease;
-}
-
-.hd-area-band-clip-rect {
-  transition:
-    x $flow-duration $flow-ease,
-    width $flow-duration $flow-ease;
-}
-
-.hd-area-band-anchor {
-  pointer-events: none;
-}
-
-.hd-area-band-start,
-.hd-area-band-end {
-  stroke: var(--chart-highlight);
-  stroke-width: 1;
-  stroke-opacity: 0.6;
-  stroke-dasharray: 3 3;
-  opacity: 0;
-  pointer-events: none;
-  transition:
-    opacity 0.15s ease,
-    x1 $flow-duration $flow-ease,
-    x2 $flow-duration $flow-ease;
-}
-
-.hd-timechart-hover {
-  .hd-area-line-highlight,
-  .hd-area-band-start,
-  .hd-area-band-end {
-    opacity: 1;
-  }
-}
-
-.hd-radar-wrap {
-  --radar-h0: 351;
-  --radar-h1: 22;
-  --radar-h2: 46;
-  --radar-h3: 100;
-  --radar-h4: 168;
-  --radar-h5: 208;
-  --radar-h6: 252;
-
-  // per-hue lightness nudge since flat HSL lightness reads much lighter for yellow/green than blue/violet
-  --radar-l0: 40%;
-  --radar-l1: 34%;
-  --radar-l2: 27%;
-  --radar-l3: 27%;
-  --radar-l4: 27%;
-  --radar-l5: 35%;
-  --radar-l6: 46%;
-
-  position: relative;
-  width: 100%;
-  max-width: 23rem;
-  margin: 0 auto;
-  aspect-ratio: 220 / 200;
-  animation: hd-ring-in 0.5s cubic-bezier(0.25, 0.8, 0.4, 1) both;
-}
-
-:root[saved-theme="dark"] .hd-radar-wrap {
-  --radar-l0: 74%;
-  --radar-l1: 70%;
-  --radar-l2: 58%;
-  --radar-l3: 54%;
-  --radar-l4: 54%;
-  --radar-l5: 70%;
-  --radar-l6: 76%;
-}
-
-.hd-radar {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  display: block;
-  overflow: visible;
-}
-
-.hd-radar-fill {
-  position: absolute;
-  inset: 0;
-  opacity: 0.32;
-  transition: opacity 0.2s ease;
-}
-
-.hd-radar-wrap.hd-radar-hovering .hd-radar-fill {
-  opacity: 0.4;
-}
-
-.hd-radar-grid {
-  fill: none;
-  stroke: var(--lightgray);
-  stroke-width: 1;
-}
-
-.hd-radar-spoke {
-  stroke: var(--lightgray);
-  stroke-width: 1;
-}
-
-.hd-radar-edge {
-  fill: none;
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-opacity: 0.6;
-  transition:
-    stroke-opacity 0.15s ease,
-    stroke-width 0.15s ease;
-}
-
-.hd-radar-edge-active {
-  stroke-width: 2.75;
-  stroke-opacity: 1;
-}
-
-.hd-radar-edge-dim {
-  stroke-opacity: 0.3;
-}
-
-.hd-radar-dot {
-  stroke: var(--light);
-  stroke-width: 1.5;
-  transform-box: fill-box;
-  transform-origin: center;
-  transition:
-    transform 0.15s cubic-bezier(0.25, 0.8, 0.4, 1),
-    filter 0.15s ease,
-    opacity 0.15s ease;
-}
-
-.hd-radar-point.hd-radar-active .hd-radar-dot,
-.hd-radar-point:focus-visible .hd-radar-dot {
-  filter: brightness(1.15) drop-shadow(0 0 5px color-mix(in srgb, currentColor 65%, transparent));
-}
-
-.hd-radar-point-dim .hd-radar-dot {
-  opacity: 0.55;
-}
-
-.hd-radar-labels {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-
-.hd-radar-label {
-  position: absolute;
-  transform: translate(-50%, -50%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.05rem;
-  max-width: 5.8rem;
-  font-size: 0.74rem;
-  line-height: 1.25;
-  color: var(--gray);
-  text-align: center;
-  transition:
-    opacity 0.15s ease,
-    color 0.15s ease;
-
-  b {
-    font-size: 0.78rem;
-    font-weight: $semiBoldWeight;
-    transition: color 0.15s ease;
-  }
-
-  &.hd-radar-label-active {
-    color: var(--darkgray);
-  }
-
-  &.hd-radar-label-dim {
-    opacity: 0.55;
-  }
 }

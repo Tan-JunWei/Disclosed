@@ -1,10 +1,57 @@
 @use "./variables.scss" as *;
 @use "./syntax.scss";
 @use "./callouts.scss";
+@use "./postCard.scss";
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(128 132 140 / 40%) transparent;
+}
+
+@supports selector(::-webkit-scrollbar) {
+  * {
+    scrollbar-width: auto;
+    scrollbar-color: auto;
+  }
+  ::-webkit-scrollbar {
+    width: 7px;
+    height: 7px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    min-height: 36px;
+    border: 2px solid transparent;
+    border-radius: 10px;
+    background: rgb(128 132 140 / 40%);
+    background-clip: padding-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: rgb(128 132 140 / 65%);
+  }
+  ::-webkit-scrollbar-thumb:active {
+    background-color: rgb(128 132 140 / 80%);
+  }
+  ::-webkit-scrollbar-button {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+}
+@media (forced-colors: active) {
+  * {
+    scrollbar-color: auto;
+  }
+}
 
 html {
   scroll-behavior: smooth;
-  text-size-adjust: none;
+  text-size-adjust: 100%;
   overflow-x: hidden;
   width: 100vw;
 }
@@ -17,6 +64,10 @@ section {
   background-color: var(--light);
   font-family: var(--bodyFont);
   color: var(--darkgray);
+  // Source Sans' word space is only 0.2em (~2.4px at 12px), so small UI text ("Aug 2026", chart
+  // labels, chips) reads as one word. A fixed extra gap helps small sizes most and is invisible on
+  // headings. Monospace is exempt (see the resets next to each --codeFont use).
+  word-spacing: 1.1px;
 }
 
 .text-highlight {
@@ -25,8 +76,8 @@ section {
   border-radius: 5px;
 }
 ::selection {
-  background: color-mix(in srgb, var(--tertiary) 60%, rgba(255, 255, 255, 0));
-  color: var(--darkgray);
+  background-color: var(--selection-bg);
+  color: var(--selection-fg);
 }
 
 p,
@@ -75,7 +126,7 @@ a {
   color: var(--secondary);
 
   &:hover {
-    color: var(--tertiary) !important;
+    color: var(--tertiary);
   }
 
   &.internal {
@@ -119,6 +170,23 @@ a {
   @media all and (max-width: $fullPageWidth) {
     display: initial;
   }
+}
+
+// Wider measure makes auto-hyphenation more distracting than helpful in technical prose.
+@media all and (min-width: $mobileBreakpoint) {
+  article :is(p, li, td, th, blockquote) {
+    hyphens: manual;
+  }
+}
+
+// Fluid three-column grid. Sidebars shrink first, the article takes the rest up to $pageWidth.
+:root {
+  --side-w: clamp(248px, 17vw, #{$sidePanelWidth});
+  --col-gap: clamp(2rem, 3vw, 3rem);
+  --page-w: min(
+    #{$pageWidth},
+    calc(100vw - 2 * var(--side-w) - 2 * var(--col-gap) - 2 * #{$columnGap})
+  );
 }
 
 .page {
@@ -167,31 +235,34 @@ a {
       flex-direction: column;
       gap: 2rem;
       top: 0;
-      width: $sidePanelWidth;
+      width: var(--side-w);
       margin-top: $topSpacing;
       box-sizing: border-box;
-      padding: 0 4rem;
       position: fixed;
       @media all and (max-width: $fullPageWidth) {
         position: initial;
         flex-direction: row;
         padding: 0;
         width: initial;
-        margin-top: 2rem;
+        margin-top: 1.25rem;
       }
     }
 
     & .sidebar.left {
-      left: calc(calc(100vw - $pageWidth) / 2 - $sidePanelWidth);
+      left: calc((100vw - var(--page-w)) / 2 - var(--side-w) - var(--col-gap));
       @media all and (max-width: $fullPageWidth) {
         gap: 0;
         align-items: center;
+        padding: 0;
       }
     }
 
     & .sidebar.right {
-      right: calc(calc(100vw - $pageWidth) / 2 - $sidePanelWidth);
+      right: calc((100vw - var(--page-w)) / 2 - var(--side-w) - var(--col-gap));
       flex-wrap: wrap;
+      @media all and (max-width: $fullPageWidth) {
+        padding: 0;
+      }
       & > * {
         @media all and (max-width: $fullPageWidth) {
           flex: 1;
@@ -203,7 +274,7 @@ a {
 
   & .page-header,
   & .page-footer {
-    width: $pageWidth;
+    width: var(--page-w);
     margin-top: 1rem;
 
     @media all and (max-width: $fullPageWidth) {
@@ -214,7 +285,32 @@ a {
   & .page-header {
     margin: $topSpacing auto 0 auto;
     @media all and (max-width: $fullPageWidth) {
-      margin-top: 2rem;
+      margin-top: 1.25rem;
+    }
+
+    & .breadcrumb-container {
+      margin-top: 0;
+    }
+
+    & .article-title {
+      margin-top: 0.75rem;
+      line-height: 1.2;
+    }
+
+    & .content-meta {
+      margin-top: 0.35rem;
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    & .tags {
+      justify-self: start;
+      margin: 0.75rem 0 0;
+      gap: 0.5rem;
+
+      & a.tag-link {
+        margin: 0;
+      }
     }
   }
 
@@ -222,7 +318,7 @@ a {
   & footer {
     margin-left: auto;
     margin-right: auto;
-    width: $pageWidth;
+    width: var(--page-w);
     @media all and (max-width: $fullPageWidth) {
       width: initial;
       margin-left: 0;
@@ -305,6 +401,7 @@ h6 {
     transition: opacity 0.2s ease;
     transform: translateY(-0.1rem);
     font-family: var(--codeFont);
+    word-spacing: normal;
     user-select: none;
   }
 
@@ -348,6 +445,7 @@ figure[data-rehype-pretty-code-figure] {
 
   & > [data-rehype-pretty-code-title] {
     font-family: var(--codeFont);
+    word-spacing: normal;
     font-size: 0.9rem;
     padding: 0.1rem 0.5rem;
     border: 1px solid var(--border);
@@ -364,6 +462,7 @@ figure[data-rehype-pretty-code-figure] {
 
 pre {
   font-family: var(--codeFont);
+  word-spacing: normal;
   padding: 0 0.5rem;
   border-radius: 5px;
   overflow-x: auto;
@@ -424,6 +523,7 @@ code {
   font-size: 0.9em;
   color: var(--dark);
   font-family: var(--codeFont);
+  word-spacing: normal;
   border-radius: 5px;
   padding: 0.1rem 0.2rem;
   background: var(--lightgray);
@@ -473,6 +573,8 @@ tr {
 
 img {
   max-width: 100%;
+  // images carry their pixel size so space is reserved before they load, this keeps the ratio
+  height: auto;
   border-radius: 5px;
   margin: 1rem 0;
 }

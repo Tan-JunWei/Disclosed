@@ -1,4 +1,4 @@
-import { Root as HTMLRoot } from "hast"
+import { Root as HTMLRoot, Element, Parent } from "hast"
 import { toString } from "hast-util-to-string"
 import { QuartzTransformerPlugin } from "../types"
 import { escapeHTML } from "../../util/escape"
@@ -18,6 +18,42 @@ const urlRegex = new RegExp(
   "g",
 )
 
+// Headings, callout titles and code read as noise at the start of a search result snippet
+const SKIPPED_TAGS = new Set(["h1", "h2", "h3", "h4", "h5", "h6", "pre", "svg", "script", "style"])
+const BLOCK_TAGS = new Set([
+  "p",
+  "li",
+  "div",
+  "blockquote",
+  "td",
+  "th",
+  "tr",
+  "figure",
+  "br",
+  "dt",
+  "dd",
+])
+const SKIPPED_CLASSES = ["callout-title", "katex-mathml", "code-language-header"]
+
+function isSkipped(node: Element): boolean {
+  if (SKIPPED_TAGS.has(node.tagName)) return true
+  const classes = node.properties?.className
+  return Array.isArray(classes) && classes.some((c) => SKIPPED_CLASSES.includes(String(c)))
+}
+
+/** The page's prose, in order, leaving out the parts listed above. */
+function proseText(node: HTMLRoot | Parent): string {
+  const parts: string[] = []
+  for (const child of node.children) {
+    if (child.type === "text") parts.push(child.value)
+    else if (child.type === "element" && !isSkipped(child)) {
+      const gap = BLOCK_TAGS.has(child.tagName) ? " " : ""
+      parts.push(gap, proseText(child), gap)
+    }
+  }
+  return parts.join("")
+}
+
 export const Description: QuartzTransformerPlugin<Partial<Options>> = (userOpts) => {
   const opts = { ...defaultOptions, ...userOpts }
   return {
@@ -28,6 +64,7 @@ export const Description: QuartzTransformerPlugin<Partial<Options>> = (userOpts)
           return async (tree: HTMLRoot, file) => {
             let frontMatterDescription = file.data.frontmatter?.description
             let text = escapeHTML(toString(tree))
+            let prose = escapeHTML(proseText(tree))
 
             if (opts.replaceExternalLinks) {
               frontMatterDescription = frontMatterDescription?.replace(
@@ -35,10 +72,12 @@ export const Description: QuartzTransformerPlugin<Partial<Options>> = (userOpts)
                 "$<domain>" + "$<path>",
               )
               text = text.replace(urlRegex, "$<domain>" + "$<path>")
+              prose = prose.replace(urlRegex, "$<domain>" + "$<path>")
             }
 
-            const desc = frontMatterDescription ?? text
-            const sentences = desc.replace(/\s+/g, " ").split(/\.\s/)
+            prose = prose.replace(/\s+/g, " ").trim()
+            const desc = frontMatterDescription ?? (prose ? prose : text)
+            const sentences = desc.replace(/\s+/g, " ").trim().split(/\.\s/)
             const finalDesc: string[] = []
             const len = opts.descriptionLength
             let sentenceIdx = 0

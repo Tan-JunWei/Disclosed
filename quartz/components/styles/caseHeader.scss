@@ -1,0 +1,218 @@
+@use "../../styles/variables.scss" as *;
+
+// Reading-page header for a post: one bar between two hairlines, with its items spread across the
+// full width. If the tags would not fit beside the facts they take a row of their own
+// (`.tags-own-row`, decided at build time), and on narrow screens everything wraps.
+.case-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem 1rem;
+  margin: 0.85rem 0 0.4rem;
+  padding: 0.7rem 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+
+  @media all and (max-width: $mobileBreakpoint) {
+    justify-content: flex-start;
+    gap: 0.6rem 1.1rem;
+  }
+}
+
+// Quartz gives internal links a highlight background and a hover colour. None of the links here
+// recolour their text on hover, so contrast only goes up.
+.case-header a {
+  background: none;
+  font-weight: $normalWeight;
+  text-decoration: none;
+}
+
+// same chip as `.wc-category` on Explore cards, a touch larger for the reading page
+.case-header a.case-category {
+  --tag-l: calc(var(--tag-light-l) - 3%);
+  --tag-color: hsl(var(--tag-hue) 62% var(--tag-l) / 1);
+
+  padding: 0.16rem 0.7rem;
+  border-radius: 999px;
+  background-color: hsl(var(--tag-hue) 62% var(--tag-l) / 0.14);
+  color: var(--tag-color);
+  font-size: 0.78rem;
+  font-weight: $semiBoldWeight;
+  line-height: 1.4;
+  white-space: nowrap;
+  transition: background-color 0.15s ease;
+
+  &:hover,
+  &:focus-visible {
+    background-color: hsl(var(--tag-hue) 62% var(--tag-l) / 0.24);
+  }
+}
+
+:root[saved-theme="dark"] .case-header a.case-category {
+  --tag-l: var(--tag-dark-l);
+}
+
+.case-header a.case-diff {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  font-weight: $semiBoldWeight;
+  text-transform: capitalize;
+  color: var(--gray);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.25em;
+  text-decoration-color: transparent;
+  transition: text-decoration-color 0.15s ease;
+
+  &:hover,
+  &:focus-visible {
+    text-decoration-color: currentColor;
+  }
+}
+
+.case-diff-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background-color: var(--gray);
+  flex-shrink: 0;
+}
+
+@each $level in beginner, easy, medium, hard, insane, expert {
+  .case-header a.case-diff[data-diff="#{$level}"] {
+    color: var(--diff-#{$level});
+
+    .case-diff-dot {
+      background-color: var(--diff-#{$level});
+    }
+  }
+}
+
+// section or project, CVE, date and reading time: a small line icon and a muted label
+.case-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  color: var(--gray);
+  white-space: nowrap;
+}
+
+.case-cvss {
+  font-weight: $normalWeight;
+  font-size: 0.74rem;
+  opacity: 0.85;
+  color: var(--gray);
+  margin-left: 0.15rem;
+}
+
+.case-mono {
+  font-family: var(--codeFont);
+  font-size: 0.76rem;
+}
+
+.case-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.case-icon {
+  width: 0.85rem;
+  height: 0.85rem;
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+
+.case-header a.case-link {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.25em;
+  text-decoration-color: transparent;
+  transition:
+    color 0.15s ease,
+    text-decoration-color 0.15s ease;
+
+  &:hover,
+  &:focus-visible {
+    color: var(--dark);
+    text-decoration-color: currentColor;
+  }
+}
+
+// tools: the same small tinted tag as on Explore cards
+.case-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+
+  li {
+    margin: 0;
+    padding: 0;
+  }
+}
+
+// too many / too long to sit beside the facts: a row of their own, left-aligned
+.case-header.tags-own-row .case-tags {
+  flex-basis: 100%;
+}
+
+.case-header a.case-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.16rem 0.65rem;
+  border-radius: 999px;
+  background-color: color-mix(in srgb, var(--darkgray) 7%, transparent);
+  color: color-mix(in srgb, var(--darkgray) 80%, var(--gray));
+  font-size: 0.76rem;
+  line-height: 1.4;
+  white-space: nowrap;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+
+  &:hover,
+  &:focus-visible {
+    background-color: color-mix(in srgb, var(--secondary) 18%, transparent);
+    color: var(--dark);
+  }
+}
+
+.case-tag-icon {
+  width: 0.65rem;
+  height: 0.65rem;
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+// touch: comfortable hit areas without enlarging the desktop layout
+@media (pointer: coarse) {
+  .case-header a.case-category {
+    padding-block: 0.4rem;
+  }
+
+  .case-header a.case-diff,
+  .case-header a.case-link {
+    padding-block: 0.5rem;
+  }
+
+  .case-header a.case-tag {
+    min-height: 2.25rem;
+    padding-inline: 0.7rem;
+  }
+
+  .case-tags {
+    gap: 0.5rem;
+  }
+}

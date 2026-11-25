@@ -1,15 +1,805 @@
-footer {
-  text-align: left;
-  margin-bottom: 4rem;
-  opacity: 0.7;
+@use "../../styles/variables.scss" as *;
 
+// The pixel props use one fixed palette, not the site's theme tokens, so each prop looks the same
+// on the light and the dark page.
+$px-line: #66737f; // outline + flag pole
+$px-legs: #6e7c89; // thin spider legs and web thread
+$px-body: #7d8a96; // mid metal
+$px-light: #cfd6dc; // light metal (monitor bezel)
+$px-shade: #9aa7b3;
+$px-hi: #f1f4f6;
+$px-screen: #0f2535;
+$px-ink: #5fe39a;
+$px-ink-dim: #3d8f66;
+$px-gold: #e9a62a;
+$px-gold-shade: #b87415;
+$px-gold-hi: #ffd980;
+$px-gold-line: #7a4a0e;
+// the flag drifts through these (all >= ~3:1 on the light page and >= 4:1 on the dark page)
+$px-flag: (#1596ad, #1f9a58, #dd6b10, #de3f5b, #b843b8);
+
+// One quiet line: licence on the left, the two ways to reach the author on the right.
+footer {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem 1.5rem;
+  // generous room above the footer on every page (the pixel scene sits inside it)
+  margin-top: 6.5rem;
+  margin-bottom: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+  text-align: left;
+  font-size: 0.8rem;
+  color: var(--gray);
+
+  & p,
   & ul {
-    list-style: none;
     margin: 0;
-    padding: 0;
+  }
+
+  & .footer-meta {
     display: flex;
-    flex-direction: row;
-    gap: 1rem;
-    margin-top: -1rem;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0 0.5rem;
+  }
+
+  & .footer-links {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0 1.1rem;
+    list-style: none;
+    padding: 0;
+
+    & li {
+      margin: 0;
+      padding: 0;
+    }
+  }
+
+  // Links stay muted until hovered, then take the strongest text colour with an underline, never
+  // the lavender link colour.
+  & a.footer-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0;
+    background: none;
+    color: var(--gray);
+    font-weight: $normalWeight;
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.25em;
+    text-decoration-color: transparent;
+    transition:
+      color 0.15s ease,
+      text-decoration-color 0.15s ease;
+
+    & svg {
+      width: 0.95rem;
+      height: 0.95rem;
+      flex-shrink: 0;
+    }
+
+    &:hover,
+    &:focus-visible {
+      color: var(--dark);
+      text-decoration-color: currentColor;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--secondary);
+      outline-offset: 3px;
+      border-radius: 3px;
+    }
+  }
+
+  & .footer-sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  @media (pointer: coarse) {
+    & a.footer-link {
+      padding: 0.6rem 0;
+    }
+  }
+
+  // Pixel props on the footer rule, spread evenly across its width. Hovering one plays its trick
+  // (`.is-active`, toggled by footerScene.inline.ts).
+  & .footer-scene {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: calc(100% + 1px);
+    height: 1.75rem;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    pointer-events: none;
+  }
+
+  // a prop is a small wrapper with a roomier invisible hit area than the sprite itself
+  & .prop {
+    position: relative;
+    flex: none;
+    line-height: 0;
+    cursor: default;
+    pointer-events: auto;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+
+    &::after {
+      content: "";
+      position: absolute;
+      inset: -0.35rem -0.5rem 0;
+    }
+  }
+
+  & .pixels {
+    display: block;
+    overflow: visible;
+    transform-origin: 50% 100%;
+
+    // every frame is stacked, and each one shows for 1/n of the cycle, in order
+    & .frame {
+      opacity: 0;
+      animation: footer-frame-2 var(--dur, 0.7s) step-end infinite;
+      animation-delay: calc(var(--dur, 0.7s) * var(--i) / var(--n));
+    }
+    & .frame.n1 {
+      opacity: 1;
+      animation: none;
+    }
+    & .frame.n3 {
+      animation-name: footer-frame-3;
+    }
+  }
+
+  // Sprite letters: k line, m body, l light, s shade, w highlight, S/g/i screen, ink and dim ink,
+  // B/F blue-screen blue and face, a/A/y gold, Z/z/e/W/V/U spider, c/C/q flag cloth
+  & .px-k {
+    fill: $px-line;
+  }
+  & .px-m {
+    fill: $px-body;
+  }
+  & .px-l {
+    fill: $px-light;
+  }
+  & .px-s {
+    fill: $px-shade;
+  }
+  & .px-w {
+    fill: $px-hi;
+  }
+  & .px-S {
+    fill: $px-screen;
+  }
+  & .px-g {
+    fill: $px-ink;
+  }
+  & .px-i {
+    fill: $px-ink-dim;
+  }
+  & .px-B {
+    fill: #0a6fd0;
+  }
+  & .px-F {
+    fill: #fff;
+  }
+  & .px-a {
+    fill: $px-gold;
+  }
+  & .px-A {
+    fill: $px-gold-shade;
+  }
+  & .px-y {
+    fill: $px-gold-hi;
+  }
+  & .prop-lock .px-k {
+    fill: $px-gold-line;
+  }
+  & .px-W {
+    fill: #f7f9fb;
+  }
+  & .px-V {
+    fill: #cfd8e0;
+  }
+  & .px-U {
+    fill: #a9b6c3;
+  }
+  & .px-Z {
+    fill: #3f4b57;
+  }
+  & .px-z {
+    fill: $px-legs;
+  }
+  & .px-e {
+    fill: #0e1722;
+  }
+  & .px-c {
+    fill: nth($px-flag, 1);
+    animation: footer-flag-cloth 42s linear infinite;
+  }
+  & .px-C {
+    fill: color-mix(in srgb, nth($px-flag, 1) 72%, #000);
+    animation: footer-flag-shade 42s linear infinite;
+  }
+  & .px-q {
+    fill: color-mix(in srgb, nth($px-flag, 1) 70%, #fff);
+    animation: footer-flag-light 42s linear infinite;
+  }
+
+  & .prop-terminal {
+    --dur: 1.2s;
+  }
+  & .prop-spider {
+    --dur: 1.6s;
+  }
+  & .prop-flag {
+    --dur: 1.5s;
+  }
+
+  // the golden padlock sits shut, then pops open for a moment every 9 seconds
+  & .prop-lock .frame {
+    animation: none;
+    &.i0 {
+      animation: footer-lock-shut 9s step-end infinite;
+    }
+    &.i1 {
+      animation: footer-lock-open 9s step-end infinite;
+    }
+  }
+
+  // Hover tricks: `.is-active` stays on for the prop's data-ms, then it settles back.
+  // monitor: a brief typing beat, then a crash at 0.56s to a blue screen with a sad face while
+  // a warning sign bobs above it, then reboots with a loading bar and comes back (4s)
+  & .fx {
+    position: absolute;
+    top: 0.1875rem; // the monitor's 12x7 screen
+    left: 0.1875rem;
+    opacity: 0;
+  }
+  & .prop-terminal.is-active {
+    animation: footer-jolt 4s step-end 1;
+    & .typing {
+      --dur: 0.9s;
+      animation: footer-typing 4s step-end 1;
+    }
+    & .bsod {
+      animation: footer-bsod 4s step-end 1;
+    }
+    & .boot {
+      animation: footer-boot 4s step-end 1;
+    }
+    & .bootbar {
+      animation: footer-bootbar 4s linear 1;
+    }
+    & .warn {
+      animation: footer-warn 4s step-end 1;
+    }
+  }
+  & .warn {
+    position: absolute;
+    left: calc(50% - 0.421875rem);
+    top: -1.1rem;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  // padlock: rattles against its shackle, the shackle's right leg springs free while the left stays
+  // seated, gold twinkles drift up while it hangs open, then it snaps shut with a last glint (3s)
+  & .spark {
+    --dur: 0.3s;
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+    transform-origin: 50% 50%;
+    &.s1 {
+      left: -0.75rem;
+      top: -0.2rem;
+    }
+    &.s2 {
+      right: -0.75rem;
+      top: 0.35rem;
+    }
+    &.s3 {
+      left: calc(50% - 0.35rem);
+      top: -0.9rem;
+    }
+    &.s4 {
+      left: calc(50% + 0.3rem);
+      top: -0.6rem;
+    }
+  }
+  & .prop-lock.is-active {
+    & .frame.i0 {
+      animation: footer-lock-trick-shut 3s step-end 1;
+    }
+    & .frame.i1 {
+      animation: footer-lock-trick-open 3s step-end 1;
+    }
+    & .sprite {
+      animation: footer-lock-trick 3s step-end 1;
+    }
+    & .spark {
+      animation: footer-spark-life 0.8s step-end 1;
+    }
+    & .s1 {
+      animation-delay: 0.65s;
+    }
+    & .s2 {
+      animation-delay: 1s;
+    }
+    & .s3 {
+      animation-delay: 1.4s;
+    }
+    & .s4 {
+      animation-delay: 2.2s;
+    }
+  }
+  // spider: shoots a thread straight up, spins a web where it ends, climbs into the web, then lets
+  // itself back down the same thread. The thread is 40px tall, so the web's hub (the middle of its
+  // 19px grid) sits 40px above the spider's head, with the grid's bottom edge 9.5px below that.
+  & .web {
+    position: absolute;
+    left: calc(50% - 0.75px);
+    bottom: 1.03125rem; // the top of the spider's head (13 rows, 2 blank at the top)
+    width: 1.5px;
+    height: 0;
+    background: $px-legs;
+    opacity: 0;
+    pointer-events: none;
+  }
+  & .prop-spider .sprite {
+    position: relative; // paints the spider over the web
+  }
+  & .web-orb {
+    position: absolute;
+    left: calc(50% - 0.59375rem);
+    bottom: calc(1.03125rem + 40px - 0.59375rem);
+    opacity: 0;
+    clip-path: circle(0% at 50% 50%);
+    pointer-events: none;
+  }
+  & .prop-spider.is-active {
+    --dur: 0.14s;
+    & .sprite {
+      animation: footer-climb 2.9s linear 1;
+    }
+    & .web {
+      animation: footer-web 2.9s linear 1;
+    }
+    & .web-orb {
+      animation: footer-web-orb 2.9s linear 1;
+    }
+  }
+  // flag: flutters hard, as if a gust caught it, and three celebration lines fan out above it
+  & .prop-flag.is-active {
+    --dur: 0.3s;
+    & .sprite {
+      animation: footer-gust 2.4s steps(1) 1;
+    }
+    & .burst .frame {
+      animation: footer-burst 0.8s step-end 2;
+      animation-delay: calc(0.2s * var(--i));
+    }
+  }
+  // the rays sit just above the flag, centred over the cloth, and take the flag's current colour
+  & .burst {
+    position: absolute;
+    bottom: calc(100% - 1px);
+    left: calc(53% - 0.796875rem);
+    pointer-events: none;
+
+    & .frame,
+    & .frame.n3 {
+      animation: none;
+      opacity: 0;
+    }
+  }
+
+  // each frame shows for a quarter of the cycle, staggered by its delay, then a blank beat.
+  // The burst plays twice.
+  @keyframes footer-burst {
+    0% {
+      opacity: 1;
+    }
+    25%,
+    100% {
+      opacity: 0;
+    }
+  }
+  @keyframes footer-typing {
+    0%,
+    3% {
+      opacity: 0;
+    }
+    4%,
+    12% {
+      opacity: 1;
+    }
+    13%,
+    100% {
+      opacity: 0;
+    }
+  }
+  @keyframes footer-bsod {
+    0%,
+    13% {
+      opacity: 0;
+    }
+    14% {
+      opacity: 1;
+    }
+    15.5% {
+      opacity: 0;
+    }
+    17%,
+    72% {
+      opacity: 1;
+    }
+    73.5%,
+    100% {
+      opacity: 0;
+    }
+  }
+  @keyframes footer-boot {
+    0%,
+    74.9% {
+      opacity: 0;
+    }
+    75%,
+    92% {
+      opacity: 1;
+    }
+    93%,
+    100% {
+      opacity: 0;
+    }
+  }
+  // the bar fills left to right in pixel steps, drawn over the boot screen's empty track
+  @keyframes footer-bootbar {
+    0%,
+    74.9% {
+      opacity: 0;
+      clip-path: inset(0 100% 0 0);
+    }
+    75% {
+      opacity: 1;
+      clip-path: inset(0 100% 0 0);
+      animation-timing-function: steps(8, end);
+    }
+    91% {
+      opacity: 1;
+      clip-path: inset(0 0 0 0);
+    }
+    92%,
+    100% {
+      opacity: 0;
+      clip-path: inset(0 0 0 0);
+    }
+  }
+  @keyframes footer-jolt {
+    0%,
+    13%,
+    17%,
+    100% {
+      transform: translateX(0);
+    }
+    14%,
+    16% {
+      transform: translateX(-1.5px);
+    }
+    15% {
+      transform: translateX(1.5px);
+    }
+  }
+  @keyframes footer-warn {
+    0%,
+    16% {
+      opacity: 0;
+      transform: translateY(0);
+    }
+    17%,
+    29%,
+    41%,
+    53%,
+    65% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    23%,
+    35%,
+    47%,
+    59% {
+      opacity: 1;
+      transform: translateY(-1.5px);
+    }
+    73.5%,
+    100% {
+      opacity: 0;
+      transform: translateY(0);
+    }
+  }
+  @keyframes footer-lock-trick {
+    0%,
+    15%,
+    26%,
+    74%,
+    80%,
+    100% {
+      transform: translate(0, 0);
+    }
+    3%,
+    9% {
+      transform: translate(-1.5px, 0);
+    }
+    6%,
+    12% {
+      transform: translate(1.5px, 0);
+    }
+    17% {
+      transform: translateY(-3px);
+    }
+    20% {
+      transform: translateY(-6px);
+    }
+    23% {
+      transform: translateY(-3px);
+    }
+    77% {
+      transform: scaleY(0.88);
+    }
+  }
+  @keyframes footer-lock-trick-shut {
+    0% {
+      opacity: 1;
+    }
+    17% {
+      opacity: 0;
+    }
+    74%,
+    100% {
+      opacity: 1;
+    }
+  }
+  @keyframes footer-lock-trick-open {
+    0% {
+      opacity: 0;
+    }
+    17% {
+      opacity: 1;
+    }
+    74%,
+    100% {
+      opacity: 0;
+    }
+  }
+  @keyframes footer-spark-life {
+    0% {
+      opacity: 1;
+      transform: translateY(0) scale(0.6);
+    }
+    25% {
+      transform: translateY(-2px) scale(1);
+    }
+    60% {
+      transform: translateY(-4px) scale(1);
+    }
+    85% {
+      transform: translateY(-6px) scale(0.6);
+    }
+  }
+  // the spider rises 36px and its thread is anchored 40px above where it started
+  @keyframes footer-climb {
+    0%,
+    24% {
+      transform: translateY(0);
+      animation-timing-function: steps(11, end);
+    }
+    52%,
+    62% {
+      transform: translateY(-36px);
+      animation-timing-function: steps(11, end);
+    }
+    88%,
+    100% {
+      transform: translateY(0);
+    }
+  }
+  @keyframes footer-web {
+    0% {
+      opacity: 1;
+      bottom: 1.03125rem;
+      height: 0;
+      animation-timing-function: steps(8, end);
+    }
+    18%,
+    24% {
+      opacity: 1;
+      bottom: 1.03125rem;
+      height: 40px;
+      animation-timing-function: steps(11, end);
+    }
+    52%,
+    62% {
+      opacity: 1;
+      bottom: calc(1.03125rem + 36px);
+      height: 4px;
+      animation-timing-function: steps(11, end);
+    }
+    88% {
+      opacity: 1;
+      bottom: 1.03125rem;
+      height: 40px;
+      animation-timing-function: steps(6, end);
+    }
+    99% {
+      opacity: 1;
+      bottom: 1.03125rem;
+      height: 0;
+    }
+    100% {
+      opacity: 0;
+      bottom: 1.03125rem;
+      height: 0;
+    }
+  }
+  @keyframes footer-gust {
+    0%,
+    100% {
+      transform: skewX(0deg);
+    }
+    8% {
+      transform: skewX(-9deg);
+    }
+    16% {
+      transform: skewX(5deg);
+    }
+    24% {
+      transform: skewX(-7deg);
+    }
+    32% {
+      transform: skewX(4deg);
+    }
+    40% {
+      transform: skewX(-5deg);
+    }
+    48% {
+      transform: skewX(3deg);
+    }
+    58% {
+      transform: skewX(-3deg);
+    }
+    70% {
+      transform: skewX(1deg);
+    }
+  }
+  @keyframes footer-frame-2 {
+    0% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0;
+    }
+  }
+  @keyframes footer-frame-3 {
+    0% {
+      opacity: 1;
+    }
+    33.333% {
+      opacity: 0;
+    }
+  }
+  @keyframes footer-lock-shut {
+    0% {
+      opacity: 1;
+    }
+    88% {
+      opacity: 0;
+    }
+    94% {
+      opacity: 1;
+    }
+  }
+  @keyframes footer-lock-open {
+    0% {
+      opacity: 0;
+    }
+    88% {
+      opacity: 1;
+    }
+    94% {
+      opacity: 0;
+    }
+  }
+
+  // the flag drifts through five fixed colours and back. Cloth, shade and highlight share one 42s
+  // clock so the three tones stay in step.
+  @each $name, $mix in (cloth: "plain", shade: "dark", light: "light") {
+    @keyframes footer-flag-#{$name} {
+      @for $i from 1 through 5 {
+        $c: nth($px-flag, $i);
+        $stop: ($i - 1) * 20%;
+        #{$stop} {
+          @if $mix == "plain" {
+            fill: $c;
+          } @else if $mix == "dark" {
+            fill: color-mix(in srgb, $c 72%, #000);
+          } @else {
+            fill: color-mix(in srgb, $c 70%, #fff);
+          }
+        }
+      }
+      100% {
+        @if $mix == "plain" {
+          fill: nth($px-flag, 1);
+        } @else if $mix == "dark" {
+          fill: color-mix(in srgb, nth($px-flag, 1) 72%, #000);
+        } @else {
+          fill: color-mix(in srgb, nth($px-flag, 1) 70%, #fff);
+        }
+      }
+    }
+  }
+
+  // the web opens outward from its hub once the thread is anchored, holds while the spider sits in
+  // it, then closes back into the hub as the thread is pulled in
+  @keyframes footer-web-orb {
+    0%,
+    17% {
+      opacity: 0;
+      clip-path: circle(0% at 50% 50%);
+    }
+    18% {
+      opacity: 1;
+      clip-path: circle(0% at 50% 50%);
+      animation-timing-function: steps(7, end);
+    }
+    34%,
+    80% {
+      opacity: 1;
+      clip-path: circle(72% at 50% 50%);
+      animation-timing-function: steps(5, end);
+    }
+    92% {
+      opacity: 1;
+      clip-path: circle(0% at 50% 50%);
+    }
+    93%,
+    100% {
+      opacity: 0;
+      clip-path: circle(0% at 50% 50%);
+    }
+  }
+
+  // no motion: everything holds its first frame and the flag stays amber
+  @media (prefers-reduced-motion: reduce) {
+    & .frame,
+    & .px-c,
+    & .px-C,
+    & .px-q,
+    & .sprite,
+    & .fx,
+    & .warn,
+    & .spark {
+      animation: none !important;
+    }
+    & .frame.i0 {
+      opacity: 1;
+    }
   }
 }

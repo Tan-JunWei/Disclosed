@@ -1,6 +1,7 @@
 import sourceMapSupport from "source-map-support"
 sourceMapSupport.install(options)
 import path from "path"
+import { execFileSync } from "child_process"
 import { PerfTimer } from "./util/perf"
 import { rimraf } from "rimraf"
 import { GlobbyFilterFunction, isGitIgnored } from "globby"
@@ -8,6 +9,7 @@ import chalk from "chalk"
 import { parseMarkdown } from "./processors/parse"
 import { filterContent } from "./processors/filter"
 import { emitContent } from "./processors/emit"
+import { findDeployProblems } from "./util/deployChecks"
 import cfg from "../quartz.config"
 import { FilePath, FullSlug, joinSegments, slugifyFilePath } from "./util/path"
 import chokidar from "chokidar"
@@ -27,7 +29,6 @@ type BuildData = {
   ignored: GlobbyFilterFunction
   mut: Mutex
   initialSlugs: FullSlug[]
-  // TODO merge contentMap and trackedAssets
   contentMap: Map<FilePath, ProcessedContent>
   trackedAssets: Set<FilePath>
   toRebuild: Set<FilePath>
@@ -37,6 +38,38 @@ type BuildData = {
 }
 
 type FileEvent = "add" | "change" | "delete"
+
+// Post dates come from each file's first commit. A shallow clone (the default on some CI and static
+// hosts) only has the latest commit, so every post would claim to be published today.
+function warnIfShallowClone(directory: string) {
+  try {
+    const shallow = execFileSync("git", ["rev-parse", "--is-shallow-repository"], {
+      cwd: directory,
+      encoding: "utf-8",
+      stdio: ["ignore", "pipe", "ignore"],
+    }).trim()
+    if (shallow === "true") {
+      console.warn(
+        chalk.yellow(
+          "Warning: this is a shallow git clone, so post dates will be wrong. Run `git fetch --unshallow` first (`npm run build` does this).",
+        ),
+      )
+    }
+  } catch {}
+}
+
+// Catches what would make the host reject the upload or publish broken downloads, with the file
+// named, instead of a generic upload failure after the build. Fatal on Cloudflare Pages only, so a
+// local build can still be previewed.
+function checkDeployable(output: string) {
+  const problems = findDeployProblems(output)
+  if (problems.length === 0) return
+  const onCloudflare = process.env.CF_PAGES === "1"
+  const log = onCloudflare ? console.error : console.warn
+  log(chalk[onCloudflare ? "red" : "yellow"]("This build cannot be deployed to Cloudflare Pages:"))
+  for (const { file, problem } of problems) log(`  ${file ? `${file}: ` : ""}${problem}`)
+  if (onCloudflare) process.exit(1)
+}
 
 function newBuildId() {
   return new Date().toISOString()
@@ -62,6 +95,8 @@ async function buildQuartz(argv: Argv, mut: Mutex, clientRefresh: () => void) {
     console.log(`  Filters: ${pluginNames("filters").join(", ")}`)
     console.log(`  Emitters: ${pluginNames("emitters").join(", ")}`)
   }
+
+  warnIfShallowClone(argv.directory)
 
   const release = await mut.acquire()
   perf.addEvent("clean")
@@ -95,6 +130,8 @@ async function buildQuartz(argv: Argv, mut: Mutex, clientRefresh: () => void) {
   await emitContent(ctx, filteredContent)
   console.log(chalk.green(`Done processing ${fps.length} files in ${perf.timeSince()}`))
   release()
+
+  if (!argv.serve) checkDeployable(output)
 
   if (argv.serve) {
     return startServing(ctx, mut, parsedFiles, clientRefresh, dependencies)
@@ -393,8 +430,6 @@ async function rebuildFromEntrypoint(
 
     ctx.allSlugs = [...new Set([...initialSlugs, ...trackedSlugs])]
 
-    // TODO: we can probably traverse the link graph to figure out what's safe to delete here
-    // instead of just deleting everything
     await rimraf(path.join(argv.output, ".*"), { glob: true })
     await emitContent(ctx, filteredContent)
     console.log(chalk.green(`Done rebuilding in ${perf.timeSince()}`))

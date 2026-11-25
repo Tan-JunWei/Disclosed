@@ -67,7 +67,7 @@ export const colorForTag = (tag: string) => {
 
   // Light mode: darker, still fully saturated band so text stays legible
   // against the pale page while keeping the same hue as dark mode.
-  const lightL = Math.min(32, Math.max(24, 28 + delta))
+  const lightL = Math.min(29, Math.max(21, 25 + delta))
 
   const hue = h.toFixed(2)
   return {
@@ -76,4 +76,21 @@ export const colorForTag = (tag: string) => {
     lightL: lightL.toFixed(2),
     darkL: darkL.toFixed(2),
   }
+}
+
+/** The `--tag-*` custom properties that tinted tag chips and category labels read. */
+export function tagColorVars(tag: string): Record<`--tag-${string}`, string | number> {
+  const { hue, lightL, darkL } = colorForTag(tag)
+  return {
+    "--tag-hue": hue,
+    "--tag-light-l": `${lightL}%`,
+    "--tag-dark-l": `${darkL}%`,
+  }
+}
+
+/** The same custom properties as an inline `style` string, for HTML built outside JSX. */
+export function tagColorStyle(tag: string): string {
+  return Object.entries(tagColorVars(tag))
+    .map(([name, value]) => `${name}:${value}`)
+    .join(";")
 }

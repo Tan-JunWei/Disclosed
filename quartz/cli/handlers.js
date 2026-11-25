@@ -324,6 +324,16 @@ export async function handleBuild(argv) {
       argv.baseDir = "/" + argv.baseDir
     }
 
+    // the path part of `baseUrl` in quartz.config.ts, e.g. "/blog" ("" if the site is at a domain root)
+    let sitePath = ""
+    try {
+      const configSource = fs.readFileSync("quartz.config.ts", "utf-8")
+      const baseUrl = /baseUrl:\s*["']([^"']+)["']/.exec(configSource)?.[1] ?? ""
+      const slash = baseUrl.indexOf("/")
+      sitePath = slash === -1 ? "" : "/" + baseUrl.slice(slash).replace(/^\/+|\/+$/g, "")
+      if (sitePath === "/") sitePath = ""
+    } catch {}
+
     await build(clientRefresh)
     const server = http.createServer(async (req, res) => {
       if (argv.baseDir && !req.url?.startsWith(argv.baseDir)) {
@@ -339,6 +349,13 @@ export async function handleBuild(argv) {
 
       // strip baseDir prefix
       req.url = req.url?.slice(argv.baseDir.length)
+
+      // The 404 page (like every page) links its CSS and scripts under the production base path from
+      // `baseUrl`, e.g. /blog/index.css. When previewing at the server root that prefix does
+      // not exist and the 404 page would load unstyled, so map it back onto the root.
+      if (!argv.baseDir && sitePath && req.url?.startsWith(sitePath + "/")) {
+        req.url = req.url.slice(sitePath.length)
+      }
 
       const serve = async () => {
         const release = await buildMutex.acquire()

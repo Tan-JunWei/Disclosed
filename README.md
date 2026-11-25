@@ -1,87 +1,105 @@
-# CTF Writeups
-Welcome to my Capture The Flag (CTF) writeup repository! Here you'll find detailed explanations and solutions to various CTF challenges I've tackled.
+# <img width="32" height="32" src="quartz/static/logo.svg" alt="" /> Disclosed
 
-> Click &#9733; if you like this project! Really appreciate it!
+Welcome to my cybersecurity blog! Here you'll find writeups for CTF challenges I've tackled, investigations from HackTheBox Sherlocks, original challenges I've created, and vulnerabilities I've found in open-source software.
+
+> Click &#9733; if you like this project! I really appreciate it!
 
 ## Contents
 
 <div align="center">
-  <img align="center" width="700" src="content/Assets/Readme Contents.png" alt="Home Page Example" />
+  <img width="700" src="docs/screenshots/home-viewport-dark.webp" alt="Full desktop viewport of the Disclosed homepage in dark mode" />
   <h4>Landing Page</h4>
 </div>
 
-- **Challenges**: Organized by category (e.g., Forensics, Cryptography, OSINT, Web Exploitation), each challenge writeup includes a step-by-step guide on how to approach and solve the problem. These writeups cover the thought process, tools used, methodologies applied, and lessons learned.
-	- I've also recently started documenting some original challenges that I've created! You can find them here: [Original Challenges](https://tan-junwei.github.io/CTF-Writeups/Challenge-Creation/CTF-Challenges-I've-Created)
-- **Relevant resources**: Provides further explanations of the concepts, tools, or techniques used to solve challenges. If applicable, sources are linked at the bottom of each challenge for personal reading.
+- **Challenges** cover my picoCTF and HNF26 solves, organised by category. I explain how I approached each challenge, the tools I used, and what I learned.
+  - I also document [original challenges I've created](https://disclosed.nepz.dev/Challenge-Creation/CTF-Challenges-I've-Created), along with their solutions.
+- **HackTheBox Sherlocks** covers my investigations from retired Sherlocks, using evidence such as event logs, file system records, and packet captures.
+- **Vulnerability research** covers open-source vulnerabilities I've reported. I explain what I found and link to advisories, CVE records, and fixes where available.
+- **Relevant resources** are linked in my writeups where they help explain a concept, tool, or technique.
 
 ## Statistics Dashboard
+
 <div align="center">
-  <img align="center" width="700" src="content/Assets/Readme Stats.png" alt="Statistics" />
+  <img width="650" src="docs/screenshots/statistics.webp" alt="Post counts and rating charts in dark mode" />
   <h4>Statistics</h4>
 </div>
 
-The landing page features a dashboard that automatically summarises the entire repository, so it always reflects the current state of the repository as new writeups are added:
-- **Quick Overview**: Total writeup count, number of categories, distinct techniques tagged, and how many self-created challenges are documented.
-- **Writeups Over Time**: A running total of writeups published, so growth over time is easily understandable.
-- **Difficulty Distribution**: A breakdown of how challenges split across difficulty levels, from Beginner to Hard.
-- **Category Distribution**: A breakdown of writeups by category (e.g. Forensics, Cryptography, Infra Hacking).
-- **Skills & Competencies**: A radar chart giving a self-assessment across a handful of CTF skill areas. 
+The landing page features a dashboard that updates as I add new posts.
+
+- **Quick overview** shows the total number of posts, categories, tags, and CVEs.
+- **Difficulty distribution** shows how my challenge writeups break down by difficulty.
+- **Severity distribution** shows how the vulnerabilities I've reported break down by severity.
 
 ## Challenge Writeups
+
 <div align="center">
-  <img align="center" width="700" src="content/Assets/Readme Challenge Example.png" alt="Challenge Example" />
+  <img width="700" src="docs/screenshots/extensions-writeup-dark.webp" alt="YCEP 2025 Extensions writeup with its description callout and terminal output in dark mode" />
   <h4>Challenge Example</h4>
 </div>
 
-Each challenge will feature a set of tags at the top, highlighting categories like "Forensics." These tags serve to offer a clear indication of the challenge's focus area, and also aid in navigation between challenges, which will be explained below. 
+My writeups cover the challenge description, my approach, and the solution. Each post shows its category, difficulty, and tags at the top. The **Table of Contents** links to sections so readers can jump to the part they need.
 
-The writeup contents are purposefully separated into bite-sized, digestible sections, which will be listed in the **Table of Contents** by the side. It also effectively illustrates the entire thought process for addressing the challenge.
+> [!IMPORTANT]
+> The estimated reading time is shown at the top of each writeup.
 
-> [!IMPORTANT]\
-> The estimated reading time for each challenge writeup is provided at the top as an indicator of how long the content will take to read. This helps to set clear expectations about the duration of the content.
+## Explore Page
 
-## Explore Writeups Page
 <div align="center">
-  <img align="center" width="700" src="content/Assets/Readme Explore Writeups.png" alt="Explore Writeups" />
-  <h4>Explore Writeups</h4>
+  <img width="700" src="docs/screenshots/explore-dark.webp" alt="Explore page with search and post cards in dark mode" />
+  <h4>Explore</h4>
 </div>
 
-The [Explorer](https://tan-junwei.github.io/CTF-Writeups/Explore) page brings every writeup together in one searchable, filterable view instead of having to dig through folders. It supports:
-- **Search**: Free-text search across writeup titles, categories, and tags.
-- **Filters**: Filter chips for platform, category, difficulty, and tag, any combination of which can be active at once.
-- **Sorting**: Newest, oldest, name, or difficulty.
+The [Explore page](https://disclosed.nepz.dev/Explore) brings all my posts together in one searchable view.
+
+- **Search** across titles, CVEs, categories, and tags.
+- **Filter** by section, category, difficulty, severity, technique, or tag. You can combine filters.
+- **Sort** by newest, oldest, name, or rating.
 
 ## Graph View Visualization
 
 <div align="center">
-  <img align="center" width="600" src="content/Assets/Readme Graph View.png" alt="Graph View" />
+  <img width="600" src="docs/screenshots/graph.webp" alt="Global graph of posts and tags in dark mode" />
   <h4>Graph View</h4>
 </div>
 
-The **Graph View** provides an interactive way to explore the relationships between challenges, concepts, tools, and techniques. It offers a visual map that can help you see how different components are connected:
-- **Circles (Nodes)**: Each circle represents a node, which can be a challenge, concept, tool, or tag. Tags allow easier navigation between similar challenges (E.g. Clicking the `#medium` tag allows you to browse challenges in that difficulty category.)
-- **Lines (Links)**: The lines between nodes present internal links, showcasing how these elements are interconnected. 
-By using this visualization, you can gain a deeper understanding of the strategies used across multiple challenges, identify common tools or techniques, and explore how different concepts are interlinked.
+The **Graph View** shows the relationships between my posts, collections, and tags.
+
+- **Circles** represent pages or tags. You can click one to browse the related material.
+- **Lines** show the links between them.
 
 ## The Ongoing Journey
-As I continue to explore and glean deeper insights, this project will remain a living document, constantly evolving and improving. Regular updates will be made to refine the content, introduce fresh perspectives, and integrate the latest knowledge. Stay tuned for ongoing enhancements!
+
+I'll keep adding writeups as I solve challenges, work through investigations, and report vulnerabilities. I also update older posts when I have something to add.
 
 ## Site Navigation
-Visit this [website](https://tan-junwei.github.io/CTF-Writeups/) to check out this project!
+
+Visit [Disclosed](https://disclosed.nepz.dev/) to browse the blog.
 
 ### Navigation
 
-#### PicoCTF
-- [All Writeups](https://tan-junwei.github.io/CTF-Writeups/PicoCTF/PicoCTF-Writeups)
-- [Forensics](https://tan-junwei.github.io/CTF-Writeups/PicoCTF/Forensics/)
-- [Cryptography](https://tan-junwei.github.io/CTF-Writeups/PicoCTF/Cryptography/)
-- [General Skills](https://tan-junwei.github.io/CTF-Writeups/tags/GeneralSkills) 
+#### picoCTF
 
-### Challenge Creation (CTF Challenges I've Created)
-- [CTF Challenges I've Created](https://tan-junwei.github.io/CTF-Writeups/Challenge-Creation/CTF-Challenges-I've-Created)
+- [All writeups](https://disclosed.nepz.dev/PicoCTF/PicoCTF-Writeups)
+- [Forensics](https://disclosed.nepz.dev/PicoCTF/Forensics/)
+- [Cryptography](https://disclosed.nepz.dev/PicoCTF/Cryptography/)
+- [General Skills](https://disclosed.nepz.dev/PicoCTF/General-Skills/)
 
-## Contributions
-Contribution are always welcome! If you'd like the suggest improvements, feel free to submit a pull request or open an issue. I'd love to hear feedback and improvements about my work!
+#### HNF26
+
+- [All writeups](https://disclosed.nepz.dev/HNF26/HNF26-Writeups)
+
+#### HackTheBox
+
+- [Sherlocks investigations](https://disclosed.nepz.dev/HackTheBox/HackTheBox-Sherlocks)
+
+#### Challenge Creation
+
+- [CTF Challenges I've Created](https://disclosed.nepz.dev/Challenge-Creation/CTF-Challenges-I've-Created)
+
+#### Vulnerability Research
+
+- [Vulnerability research posts](https://disclosed.nepz.dev/Vulnerability-Research/Vulnerability-Research)
 
 ## License
-This repository is licensed under the MIT License. Feel free to use, modify, and distribute the content with proper attribution.
+
+My writing in `content/` is licensed under [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/). The site code is built on [Quartz](https://github.com/jackyzha0/quartz) and is available under the [MIT License](LICENSE.txt).

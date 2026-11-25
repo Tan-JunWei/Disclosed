@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
+  <title>Disclosed logo, a folded flag</title>
+  <defs>
+    <linearGradient id="surface" x1="8" y1="2" x2="53" y2="64" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#263A4B"/>
+      <stop offset="1" stop-color="#101A26"/>
+    </linearGradient>
+    <linearGradient id="edge" x1="4" y1="0" x2="57" y2="64" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#658096" stop-opacity=".7"/>
+      <stop offset=".5" stop-color="#658096" stop-opacity=".12"/>
+      <stop offset="1" stop-color="#658096" stop-opacity=".3"/>
+    </linearGradient>
+    <linearGradient id="ribbon" x1="23" y1="15" x2="48" y2="34" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#D1CAFF"/>
+      <stop offset="1" stop-color="#9B8BE2"/>
+    </linearGradient>
+    <linearGradient id="fold" x1="25" y1="30" x2="48" y2="40" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6677B5"/>
+      <stop offset="1" stop-color="#8E7ACA"/>
+    </linearGradient>
+    <linearGradient id="staff" x1="18" y1="17" x2="25" y2="49" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F5F5FC"/>
+      <stop offset="1" stop-color="#B9D4E6"/>
+    </linearGradient>
+  </defs>
+  <rect x=".75" y=".75" width="62.5" height="62.5" rx="15.25" fill="url(#surface)" stroke="url(#edge)" stroke-width="1.5"/>
+  <path d="M24 15h25l-9 11 9 11H24V15Z" fill="url(#ribbon)"/>
+  <path d="m24 26 25 11H24V26Z" fill="url(#fold)"/>
+  <path d="M18 17a2 2 0 0 1 2-2h5v31l-7 5V17Z" fill="url(#staff)"/>
+</svg>
