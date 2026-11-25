@@ -13,13 +13,8 @@ const config: QuartzConfig = {
     enablePopovers: true,
     analytics: null,
     locale: "en-US",
-    // Production address, used only where a URL must be absolute: canonical links, social metadata,
-    // structured data, the sitemap, RSS and robots.txt. Pages link to each other with relative URLs,
-    // so the build works unchanged on any host, preview deployment or local server.
     baseUrl: "disclosed.nepz.dev",
     ignorePatterns: ["private", "templates", ".obsidian"],
-    // `modified` in frontmatter only records the last edit, and bulk edits reset it for every file.
-    // Lists, sorting and the dashboard use the date a post was first added instead.
     defaultDateType: "created",
     theme: {
       fontOrigin: "local",
@@ -100,16 +95,10 @@ const config: QuartzConfig = {
       Plugin.NotFoundPage(),
       Plugin.RobotsTxt(),
       Plugin.HostingRules({
-        // old GitHub Pages paths (tan-junwei.github.io/CTF-Writeups/), in case a link or bookmark reaches the new domain
-        legacyPaths: ["/CTF-Writeups"],
         redirects: [
           "/HackTheBox/Forensics /HackTheBox/Sherlocks/ 301",
           "/HackTheBox/Forensics/* /HackTheBox/Sherlocks/:splat 301",
-          "/CTF-Writeups/HackTheBox/Forensics /HackTheBox/Sherlocks/ 301",
-          "/CTF-Writeups/HackTheBox/Forensics/* /HackTheBox/Sherlocks/:splat 301",
         ],
-        // Cloudflare Pages copies: the production alias and every preview deployment
-        noindexHosts: [":project.pages.dev", ":version.:project.pages.dev"],
       }),
     ],
   },

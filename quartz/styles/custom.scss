@@ -34,9 +34,6 @@ code {
   background: var(--highlight);
 }
 
-// Inline code is a quiet token rather than a button: a faint tint of the site's navy, a hairline
-// edge, normal weight and navy-leaning text, so a sentence full of commands and addresses still reads
-// as a sentence. Fenced code blocks and the compact metadata values keep their own styles.
 :root {
   --inline-code-bg: color-mix(in srgb, var(--secondary) 8%, var(--surface));
   --inline-code-border: color-mix(in srgb, var(--secondary) 17%, transparent);
@@ -57,25 +54,24 @@ article :not(pre) > code {
   border: 1px solid var(--inline-code-border);
   border-radius: 6px;
   padding: 0.12em 0.38em;
-  // a hair of space so brackets and commas next to a token do not touch its edge
   margin-inline: 0.08em;
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
 }
 
-// code that is part of a link reads as the link
 article a > code {
   color: inherit;
 }
 
 article img {
+  display: block;
+  margin-inline: auto;
   transition: all 0.3s ease-in-out;
   transform-origin: center center;
   cursor: zoom-in;
   max-width: 100%;
   position: relative;
   border: 1px solid var(--border);
-  // shadow helps images stand out in light mode, not needed in dark mode
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
 }
 

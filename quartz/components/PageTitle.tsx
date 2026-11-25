@@ -1,25 +1,15 @@
 import { joinSegments, pathToRoot } from "../util/path"
 import { QuartzComponent, QuartzComponentConstructor, QuartzComponentProps } from "./types"
 import { classNames } from "../util/lang"
-import { i18n } from "../i18n"
+import { assetVersion } from "../util/resources"
 import style from "./styles/pagetitle.scss"
 
-const PageTitle: QuartzComponent = ({ fileData, cfg, displayClass }: QuartzComponentProps) => {
-  const title = cfg?.pageTitle ?? i18n(cfg.locale).propertyDefaults.title
+const PageTitle: QuartzComponent = ({ fileData, cfg, ctx, displayClass }: QuartzComponentProps) => {
   const baseDir = pathToRoot(fileData.slug!)
+  const logo = `${joinSegments(baseDir, "static/logo.svg")}?v=${assetVersion(ctx.buildId)}`
   return (
     <div class={classNames(displayClass, "page-title")}>
-      <a href={baseDir}>
-        <img
-          class="site-logo"
-          src={joinSegments(baseDir, "static/logo.svg")}
-          width="36"
-          height="36"
-          alt=""
-          aria-hidden="true"
-        />
-        <span>{title}</span>
-      </a>
+      <img class="site-logo" src={logo} width="325" height="64" alt={cfg.pageTitle} />
     </div>
   )
 }

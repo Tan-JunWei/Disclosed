@@ -195,9 +195,6 @@
   filter: drop-shadow(0 0 5px #9bc7ed22);
 }
 
-// The wireframe is a failure fallback, not a loading placeholder: it is invisible while the scene
-// loads (a flat drawing that then swaps for the real first frame reads as a glitch) and appears
-// only when the scene reports it cannot run (`data-scene-ready="false"`) or scripting is off (below).
 .lab-scene-fallback {
   opacity: 0;
 }
@@ -206,16 +203,12 @@
   opacity: 1;
 }
 
-// no JavaScript at all: nothing will ever draw the scene, so show the drawing straight away
-// (a media query, not <noscript>, because the SPA router would copy a <noscript><style> into the
-// live DOM, where it applies and would pin the fallback on top of the working scene)
 @media (scripting: none) {
   .lab-scene-fallback {
     opacity: 1;
   }
 }
 
-// the real first frame eases in once it is drawn
 .lab-hero[data-scene-ready="true"] .lab-canvas {
   animation: lab-canvas-in 0.4s ease-out both;
 }
@@ -390,9 +383,6 @@
   }
 }
 
-// Light theme. The hero is not a dark panel dropped onto a light page: it becomes the same warm
-// paper as the cards (the scene draws its glow as ink on that paper, see compositeFragment), with
-// the site's deep blue and violet doing the work the pale blue glow does at night.
 :root[saved-theme="light"] {
   .home-page .lab-hero {
     border-color: color-mix(in srgb, var(--border) 75%, transparent);

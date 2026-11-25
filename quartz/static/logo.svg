@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
-  <title>Disclosed logo, a folded flag</title>
+<svg xmlns="http://www.w3.org/2000/svg" width="325" height="64" viewBox="0 0 325 64" fill="none">
+  <title>Disclosed</title>
   <defs>
     <linearGradient id="surface" x1="8" y1="2" x2="53" y2="64" gradientUnits="userSpaceOnUse">
       <stop stop-color="#263A4B"/>
@@ -22,9 +22,29 @@
       <stop stop-color="#F5F5FC"/>
       <stop offset="1" stop-color="#B9D4E6"/>
     </linearGradient>
+    <linearGradient id="wordmark-ink" x1="82" y1="15" x2="324" y2="50" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7874AE"/>
+      <stop offset=".52" stop-color="#4C7FA7"/>
+      <stop offset="1" stop-color="#3F8280"/>
+    </linearGradient>
   </defs>
   <rect x=".75" y=".75" width="62.5" height="62.5" rx="15.25" fill="url(#surface)" stroke="url(#edge)" stroke-width="1.5"/>
   <path d="M24 15h25l-9 11 9 11H24V15Z" fill="url(#ribbon)"/>
   <path d="m24 26 25 11H24V26Z" fill="url(#fold)"/>
   <path d="M18 17a2 2 0 0 1 2-2h5v31l-7 5V17Z" fill="url(#staff)"/>
+  <g transform="translate(1.5) skewX(-4)" fill="url(#wordmark-ink)" fill-rule="evenodd">
+    <path d="M84.5 15h24l2.5 2.5V29c0 8.5-4.9 14.5-14.5 21C86.9 43.5 82 37.5 82 29V17.5L84.5 15ZM87.7 20.7V29c0 5.9 3 10.2 8.8 14.4 5.8-4.2 8.8-8.5 8.8-14.4v-8.3H87.7Z"/>
+    <path d="M90 23h7l6 4v6l-6 4h-7V23Zm4 4v6h2l3-2v-2l-3-2h-2Z" stroke="url(#wordmark-ink)" stroke-width=".55" stroke-linejoin="round"/>
+    <g stroke="url(#wordmark-ink)" stroke-width="1.35" stroke-linejoin="round">
+      <path d="M117 26h7v24h-7Z"/>
+      <path d="M137 25h13l4 4-4 4-3-2h-8l-2 2 2 2h10l5 5v5l-5 5h-15l-5-4 4-4 4 2h9l2-2-2-2h-10l-6-5v-5Z"/>
+      <path d="M166 25h17l-4.5 6H169l-4 3.5v6l4 3.5h14l-4.5 6H166l-8-7V32Z"/>
+      <path d="M190 15h6l-1 26.5 2.5 2.5h5l-3 6H193l-5-5V18Z"/>
+      <path d="M210 25h12l8 7v11l-8 7h-12l-8-7V32Zm3 6-4 3v7l4 3h6l4-3v-7l-4-3Z"/>
+      <path d="M242 25h13l4 4-4 4-3-2h-8l-2 2 2 2h10l5 5v5l-5 5h-15l-5-4 4-4 4 2h9l2-2-2-2h-10l-6-5v-5Z"/>
+      <path d="M271 25h12l8 7v8h-20v2l3 2h12l4 4-4 2h-15l-7-6V32Zm3 6-3 3v1h13v-1l-3-3Z" transform="translate(-1)"/>
+      <path d="M317 15h7l-1.5 7v28H317v-2l-3 2h-11l-8-7V32l8-7h11l3 2V15Zm-11 16-4 3.5v6l4 3.5h7l4-3.5v-6l-4-3.5Z" transform="translate(-1)"/>
+    </g>
+    <path fill="#7769A8" d="M118.5 15h6v6.5H117Z"/>
+  </g>
 </svg>

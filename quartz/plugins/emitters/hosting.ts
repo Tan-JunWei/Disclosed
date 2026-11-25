@@ -2,7 +2,7 @@ import { FilePath, FullSlug } from "../../util/path"
 import { QuartzEmitterPlugin } from "../types"
 import { write } from "./helpers"
 import DepGraph from "../../depgraph"
-import { absoluteAssetUrl } from "../../util/siteUrl"
+import { absoluteAssetUrl, siteUrl } from "../../util/siteUrl"
 
 export const RobotsTxt: QuartzEmitterPlugin = () => ({
   name: "RobotsTxt",
@@ -17,21 +17,6 @@ export const RobotsTxt: QuartzEmitterPlugin = () => ({
   },
 })
 
-interface HostingOptions {
-  /** Old path prefixes (e.g. a GitHub Pages project path) that should redirect to the same page here. */
-  legacyPaths: string[]
-  /** Additional path redirects in the host's _redirects format. */
-  redirects: string[]
-  /** Hostname patterns in `_headers` syntax whose copies of the site must not be indexed. */
-  noindexHosts: string[]
-}
-
-const defaultOptions: HostingOptions = {
-  legacyPaths: [],
-  redirects: [],
-  noindexHosts: [],
-}
-
 // Requested with a `?v=<build id>` query (see pageResources), so a new build always gets new URLs.
 const VERSIONED = [
   "/index.css",
@@ -42,10 +27,7 @@ const VERSIONED = [
   "/static/search-engine.js",
 ]
 const IMMUTABLE = "public, max-age=31536000, immutable"
-// Screenshots rarely change. Caching them for a day avoids a revalidation request for every image.
 const IMAGES = "public, max-age=86400, stale-while-revalidate=604800"
-// Baseline hardening for every response. There is no script-src policy: Quartz relies on inline
-// scripts, and a static site with no forms or logins gains little from one.
 const SECURITY = [
   "X-Content-Type-Options: nosniff",
   "Referrer-Policy: strict-origin-when-cross-origin",
@@ -54,12 +36,9 @@ const SECURITY = [
   "Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()",
 ]
 
-/**
- * `_headers` and `_redirects` in the format read by Cloudflare Pages (and Netlify). Other static
- * hosts ignore them, and nothing in the site depends on them to work.
- */
-export const HostingRules: QuartzEmitterPlugin<Partial<HostingOptions>> = (userOpts) => {
-  const opts = { ...defaultOptions, ...userOpts }
+export const HostingRules: QuartzEmitterPlugin<{ redirects?: string[] }> = ({
+  redirects = [],
+} = {}) => {
   return {
     name: "HostingRules",
     getQuartzComponents: () => [],
@@ -69,21 +48,14 @@ export const HostingRules: QuartzEmitterPlugin<Partial<HostingOptions>> = (userO
     async emit(ctx) {
       const rule = (path: string, ...headers: string[]) =>
         [path, ...headers.map((header) => `  ${header}`)].join("\n")
+      const baseUrl = ctx.cfg.configuration.baseUrl
       const headers = [
-        ...opts.noindexHosts.map((host) => rule(`https://${host}/*`, "X-Robots-Tag: noindex")),
-        rule("/*", ...SECURITY),
+        rule("/*", ...SECURITY, ...(baseUrl ? ["X-Robots-Tag: noindex"] : [])),
         ...VERSIONED.map((path) => rule(path, `Cache-Control: ${IMMUTABLE}`)),
-        // font file names carry the font's version, so a changed font is a new URL
         rule("/static/fonts/*", `Cache-Control: ${IMMUTABLE}`),
         rule("/Assets/*", `Cache-Control: ${IMAGES}`),
       ]
-
-      // The blog already has a /CTF-Writeups landing page. Redirect only the old nested URLs.
-      const legacyRedirects = opts.legacyPaths.map((legacy) => {
-        const prefix = "/" + legacy.replace(/^\/+|\/+$/g, "")
-        return `${prefix}/* /:splat 301`
-      })
-      const redirects = [...opts.redirects, ...legacyRedirects]
+      if (baseUrl) headers.push(rule(`https://${siteUrl(baseUrl).hostname}/*`, "! X-Robots-Tag"))
 
       const emitted = [
         await write({

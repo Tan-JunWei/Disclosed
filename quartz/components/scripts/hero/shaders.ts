@@ -1061,6 +1061,13 @@ export const compositeFragment = /* glsl */ `
   vec3 toSRGB(vec3 v) {
     return mix(v * 12.92, 1.055 * pow(max(v, 0.0), vec3(1.0 / 2.4)) - 0.055, step(vec3(0.0031308), v));
   }
+  // Recover a premultiplied layer from the colour it would produce over the theme surface.
+  vec4 overSurface(vec3 colour, vec3 surface) {
+    vec3 delta = clamp(colour, 0.0, 1.0) - surface;
+    vec3 coverage = max(delta / (1.0 - surface), -delta / surface);
+    float alpha = max(max(coverage.r, coverage.g), coverage.b);
+    return vec4(clamp(delta + surface * alpha, 0.0, alpha), alpha);
+  }
   // ACES-style filmic curve: a firm toe keeps the ground dark and the mid-tones contrasty, and the
   // gentle shoulder rolls hot cores towards white without clipping them flat.
   vec3 filmic(vec3 x) {
@@ -1125,7 +1132,9 @@ export const compositeFragment = /* glsl */ `
     light += aura * (0.045 + mist * 0.05);
     vec3 mapped = toSRGB(filmic(light * 1.08));
     vec2 p = vUv - 0.5;
-    vec3 background = vec3(0.043137, 0.062745, 0.086275);
+    const vec3 darkSurface = vec3(11.0, 16.0, 22.0) / 255.0;
+    const vec3 lightSurface = vec3(250.0, 250.0, 247.0) / 255.0;
+    vec3 background = darkSurface;
     background += vec3(0.008, 0.011, 0.018) * exp(-dot(p, p) * 12.0);
     // An offset, soft silhouette shadow gives the emission a darker ground behind it.
     vec3 shadow = texture2D(tAura, vUv + vec2(-0.02, 0.025)).rgb;
@@ -1133,8 +1142,11 @@ export const compositeFragment = /* glsl */ `
     float vignette = 1.0 - smoothstep(0.35, 0.76, length(p)) * 0.25;
     vec3 particles = texture2D(tParticles, vUv).rgb;
     vec3 night = background + mapped * vignette + particles;
+    vec2 edge = min(vUv, 1.0 - vUv);
+    float fade = smoothstep(0.0, 0.055, min(edge.x, edge.y));
+    vec4 darkLayer = overSurface(night, darkSurface);
     if (uLight <= 0.0) {
-      gl_FragColor = vec4(night, 1.0);
+      gl_FragColor = darkLayer * fade;
       return;
     }
 
@@ -1142,7 +1154,7 @@ export const compositeFragment = /* glsl */ `
     // how much light a pixel holds sets how much ink covers it, and the light's hue, saturated and
     // deepened, sets the ink colour. The blue and lavender glow become the site's deep blue and
     // violet, and the bloom becomes a faint tinted haze around the lines instead of a glare.
-    vec3 paper = vec3(0.980, 0.980, 0.969);
+    vec3 paper = lightSurface;
     // a soft, cool contact shadow under the object gives it the depth the glow gave it at night
     float shade = clamp(dot(shadow, vec3(0.333)) * 1.4, 0.0, 1.0);
     paper *= 1.0 - shade * vec3(0.05, 0.04, 0.025);
@@ -1163,7 +1175,7 @@ export const compositeFragment = /* glsl */ `
       mix(inkColour(particles, sparkCover), litColour(particles), sparkLit * 0.85),
       sparkCover * 0.9
     );
-    gl_FragColor = vec4(mix(night, day, uLight), 1.0);
+    gl_FragColor = mix(darkLayer, overSurface(day, lightSurface), uLight) * fade;
   }
 `
 

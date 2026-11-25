@@ -2,6 +2,7 @@ import { FolderState } from "../ExplorerNode"
 
 type MaybeHTMLElement = HTMLElement | undefined
 let currentExplorerState: FolderState[]
+let explorerReady = false
 
 // every row the keyboard can land on: the pinned Explore link, folder rows and page links
 const ROW_SELECTOR = ".explorer-pin, .folder-button, a.explorer-file"
@@ -238,16 +239,18 @@ function setupExplorer() {
   if (list) setupScrollCues(list)
   if (content) setupRovingFocus(content)
 
-  // Keep the user's position when the selected row is already visible.
+  const smooth = explorerReady && !matchMedia("(prefers-reduced-motion: reduce)").matches
+  explorerReady = true
   const frame = requestAnimationFrame(() => {
     const active = list?.querySelector<HTMLElement>(
       "[aria-current='page'], .folder-container.active",
     )
     if (!list?.clientHeight || !active) return
-    const row = active.getBoundingClientRect()
-    const viewport = list.getBoundingClientRect()
-    if (row.top < viewport.top) list.scrollTop += row.top - viewport.top
-    else if (row.bottom > viewport.bottom) list.scrollTop += row.bottom - viewport.bottom
+    const offset = active.getBoundingClientRect().top - list.getBoundingClientRect().top
+    list.scrollTo({
+      top: list.scrollTop + offset - list.clientHeight * 0.35,
+      behavior: smooth ? "smooth" : "instant",
+    })
   })
   window.addCleanup(() => cancelAnimationFrame(frame))
 }

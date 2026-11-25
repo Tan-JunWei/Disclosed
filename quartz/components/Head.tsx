@@ -18,7 +18,7 @@ export default (() => {
 
     const root = basePath(cfg.baseUrl)
     const baseDir = fileData.slug === "404" ? (root as FullSlug) : pathToRoot(fileData.slug!)
-    const iconPath = `${joinSegments(baseDir, "static/logo.svg")}?v=2`
+    const iconPath = joinSegments(baseDir, "static/icon.svg")
     const isArticle = seo.kind === "post"
 
     return (

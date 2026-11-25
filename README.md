@@ -1,4 +1,6 @@
-# <img width="32" height="32" src="quartz/static/logo.svg" alt="" /> Disclosed
+<h1 align="center">
+  <img width="254" height="50" src="https://raw.githubusercontent.com/Tan-JunWei/Disclosed/v4/quartz/static/logo.svg?v=0db5412d" alt="Disclosed" />
+</h1>
 
 Welcome to my cybersecurity blog! Here you'll find writeups for CTF challenges I've tackled, investigations from HackTheBox Sherlocks, original challenges I've created, and vulnerabilities I've found in open-source software.
 
@@ -7,7 +9,7 @@ Welcome to my cybersecurity blog! Here you'll find writeups for CTF challenges I
 ## Contents
 
 <div align="center">
-  <img width="700" src="docs/screenshots/home-viewport-dark.webp" alt="Full desktop viewport of the Disclosed homepage in dark mode" />
+  <img width="700" src="docs/screenshots/landing-page-dark.webp" alt="Full desktop viewport of the Disclosed homepage in dark mode" />
   <h4>Landing Page</h4>
 </div>
 
@@ -20,7 +22,7 @@ Welcome to my cybersecurity blog! Here you'll find writeups for CTF challenges I
 ## Statistics Dashboard
 
 <div align="center">
-  <img width="650" src="docs/screenshots/statistics.webp" alt="Post counts and rating charts in dark mode" />
+  <img width="650" src="docs/screenshots/statistics-dashboard-dark.webp" alt="Post counts and rating charts in dark mode" />
   <h4>Statistics</h4>
 </div>
 
@@ -33,7 +35,7 @@ The landing page features a dashboard that updates as I add new posts.
 ## Challenge Writeups
 
 <div align="center">
-  <img width="700" src="docs/screenshots/extensions-writeup-dark.webp" alt="YCEP 2025 Extensions writeup with its description callout and terminal output in dark mode" />
+  <img width="700" src="docs/screenshots/challenge-writeup-dark.webp" alt="YCEP 2025 Extensions writeup with its description callout and terminal output in dark mode" />
   <h4>Challenge Example</h4>
 </div>
 
@@ -45,7 +47,7 @@ My writeups cover the challenge description, my approach, and the solution. Each
 ## Explore Page
 
 <div align="center">
-  <img width="700" src="docs/screenshots/explore-dark.webp" alt="Explore page with search and post cards in dark mode" />
+  <img width="700" src="docs/screenshots/explore-page-dark.webp" alt="Explore page with search and post cards in dark mode" />
   <h4>Explore</h4>
 </div>
 
@@ -58,7 +60,7 @@ The [Explore page](https://disclosed.nepz.dev/Explore) brings all my posts toget
 ## Graph View Visualization
 
 <div align="center">
-  <img width="600" src="docs/screenshots/graph.webp" alt="Global graph of posts and tags in dark mode" />
+  <img width="600" src="docs/screenshots/graph-view-dark.webp" alt="Global graph of posts and tags in dark mode" />
   <h4>Graph View</h4>
 </div>
 

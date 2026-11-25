@@ -58,17 +58,14 @@ function warnIfShallowClone(directory: string) {
   } catch {}
 }
 
-// Catches what would make the host reject the upload or publish broken downloads, with the file
-// named, instead of a generic upload failure after the build. Fatal on Cloudflare Pages only, so a
-// local build can still be previewed.
 function checkDeployable(output: string) {
   const problems = findDeployProblems(output)
   if (problems.length === 0) return
-  const onCloudflare = process.env.CF_PAGES === "1"
-  const log = onCloudflare ? console.error : console.warn
-  log(chalk[onCloudflare ? "red" : "yellow"]("This build cannot be deployed to Cloudflare Pages:"))
+  const strict = process.env.CI === "true" || process.env.CI === "1"
+  const log = strict ? console.error : console.warn
+  log(chalk[strict ? "red" : "yellow"]("Invalid build output:"))
   for (const { file, problem } of problems) log(`  ${file ? `${file}: ` : ""}${problem}`)
-  if (onCloudflare) process.exit(1)
+  if (strict) process.exit(1)
 }
 
 function newBuildId() {

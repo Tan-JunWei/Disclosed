@@ -1,7 +1,6 @@
 import fs from "node:fs"
 import path from "node:path"
 
-/** Cloudflare Pages limits: https://developers.cloudflare.com/pages/platform/limits/ */
 export const MAX_FILE_BYTES = 25 * 1024 * 1024
 export const MAX_FILES = 20_000
 

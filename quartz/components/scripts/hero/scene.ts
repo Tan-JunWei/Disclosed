@@ -60,10 +60,7 @@ const holdSeconds = (index: number) => (index === 6 ? NETWORK_HOLD_SECONDS : HOL
 
 /** A home-only scene. Particle trajectories are evaluated entirely in the vertex shader. */
 export function mountHero(root: HTMLElement): () => void {
-  // A WebGL context lives and dies with its <canvas> element, and `forceContextLoss()` (which the
-  // disposer below uses to free GPU memory promptly) kills it permanently. The SPA router keeps DOM
-  // nodes that are identical across navigations, so re-mounting onto the old canvas would hand
-  // three.js a dead context. Every mount therefore takes a fresh canvas of its own.
+  // The router can reuse the canvas after its previous WebGL context was disposed.
   const previous = root.querySelector<HTMLCanvasElement>(".lab-canvas")!
   const canvas = previous.cloneNode(false) as HTMLCanvasElement
   previous.replaceWith(canvas)
@@ -72,7 +69,8 @@ export function mountHero(root: HTMLElement): () => void {
   const mobile = matchMedia("(max-width: 600px)")
   const renderer = new WebGLRenderer({
     canvas,
-    alpha: false,
+    alpha: true,
+    premultipliedAlpha: true,
     antialias: false,
     powerPreference: "high-performance",
   })
@@ -116,12 +114,10 @@ export function mountHero(root: HTMLElement): () => void {
     uResolution: { value: new Vector2(1, 1) },
     uLineResolution: { value: new Vector2(1, 1) },
     uDensity: { value: 1 },
-    // which way the cloud swirls, and the flow field's offset
     uSwirl: { value: 1 },
     uFlowSeed: { value: 0 },
     // pointer over the stage in clip space, z = how strongly it pushes (0 when away or touch)
     uPointer: { value: new Vector3() },
-    // More particles overlap more, so each one is fainter: the stream carries the same light at any count.
     uCrowd: { value: Math.pow(2800 / count, 0.8) },
     uBlue: { value: new Color("#9bc7ed") },
     uLavender: { value: new Color("#bdb0ed") },
@@ -495,8 +491,6 @@ export function mountHero(root: HTMLElement): () => void {
       depthWrite: false,
     }),
   )
-  // Light theme re-reads the glow as ink on paper (see compositeFragment). A theme switch eases the
-  // ground across in about half a second while the scene runs, or snaps when it is still.
   const isLight = () => document.documentElement.getAttribute("saved-theme") !== "dark"
   const theme = { uniform: { value: isLight() ? 1 : 0 }, target: isLight() ? 1 : 0 }
   const finalMaterial = ownMaterial(
@@ -692,7 +686,6 @@ export function mountHero(root: HTMLElement): () => void {
     incoming.visible = incomingNodes.visible = true
     common.uProgress.value = 0
     common.uTransition.value = 1
-    // A new swirl and flow pattern every time, so no two transitions look alike.
     common.uSwirl.value = targetIndex % 2 === 0 ? 1 : -1
     common.uFlowSeed.value = targetIndex * 1.37
     // Preparation happens during the hold, so transitions keep a fixed cadence.
@@ -701,7 +694,6 @@ export function mountHero(root: HTMLElement): () => void {
   }
 
   function settle() {
-    // the next hold begins where this morph ends
     cycleStart += holdSeconds(currentIndex) + MORPH_SECONDS
     currentIndex = targetIndex
     currentCloud = targetCloud
@@ -748,9 +740,7 @@ export function mountHero(root: HTMLElement): () => void {
       common.uProgress.value = Math.min(1, (time - transitionStart) / MORPH_SECONDS)
       if (common.uProgress.value >= 1) settle()
     }
-    // Computed after any settle so a freshly arrived object never renders with the previous
-    // object's end-of-hold phase for a frame.
-    // Idle animation phase: 0..1 across the hold, then parked at 1 while the object morphs out.
+    // Compute the phase after settling so a new form starts at zero.
     const phase = Math.min(1, Math.max(0, (time - cycleStart) / holdSeconds(currentIndex)))
     common.uPhase.value = phase
     outgoing.material.uniforms.uPhase.value = outgoingNodes.material.uniforms.uPhase.value = phase
@@ -855,8 +845,6 @@ export function mountHero(root: HTMLElement): () => void {
   }
   function themeChanged() {
     theme.target = isLight() ? 1 : 0
-    // a running scene eases across on its next frames. A still one (reduced motion, paused, off
-    // screen) is redrawn at once so it never shows the old theme's ground
     if (!frame) {
       theme.uniform.value = theme.target
       render()
@@ -919,10 +907,6 @@ export function mountHero(root: HTMLElement): () => void {
     document.removeEventListener("visibilitychange", visibilityChanged)
     canvas.removeEventListener("webglcontextlost", lost)
     canvas.removeEventListener("webglcontextrestored", restored)
-    // Teardown runs the moment navigation starts, but the next mount only happens after the page
-    // has been fetched and patched in. A canvas whose context is lost paints opaque white, so kill
-    // the context on a detached canvas and leave a blank transparent twin in its place: the hero's
-    // own dark background shows through the gap instead of a white flash.
     canvas.replaceWith(canvas.cloneNode(false))
     geometries.forEach((geometry) => geometry.dispose())
     materials.forEach((material) => material.dispose())
