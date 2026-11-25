@@ -6,93 +6,6 @@ let currentExplorerState: FolderState[]
 // every row the keyboard can land on: the pinned Explore link, folder rows and page links
 const ROW_SELECTOR = ".explorer-pin, .folder-button, a.explorer-file"
 
-// false until the first page has set the explorer up, because later navigations are SPA
-// transitions that should glide rather than snap
-let explorerReady = false
-
-const prefersReducedMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches
-
-// One glide at a time. It deliberately survives page navigations (the explorer list does too), so a
-// glide started by a click carries on while the next page loads.
-type Glide = {
-  list: HTMLElement
-  target: number
-  frame: number
-  position: number
-  velocity: number
-}
-let glide: Glide | undefined
-
-function stopGlide() {
-  if (glide) cancelAnimationFrame(glide.frame)
-  glide = undefined
-}
-
-// Spring stiffness (1/s). Critically damped, so there is no overshoot. It settles in roughly half a
-// second, against ~0.33s for the browser's own smooth scroll. Lower it for a slower glide.
-const GLIDE_OMEGA = 10
-
-/**
- * Eases the list to `target` with a critically damped spring instead of the browser's fixed-length
- * smooth scroll, so the pace is ours to tune. Time per frame is capped: the page transition can block
- * the main thread for a couple of hundred milliseconds, and a time-based tween would hop to catch up.
- */
-function glideTo(list: HTMLElement, rawTarget: number) {
-  const target = Math.min(Math.max(rawTarget, 0), list.scrollHeight - list.clientHeight)
-  // already heading to this spot (the post-navigation pass asks for the position the click chose)
-  if (glide?.list === list && Math.abs(glide.target - target) < 2) return
-  if (Math.abs(target - list.scrollTop) < 2) {
-    stopGlide()
-    return
-  }
-
-  // retargeting mid-glide keeps the current velocity, so the motion never stutters
-  const carried = glide?.list === list ? glide : undefined
-  const state: Glide = {
-    list,
-    target,
-    frame: 0,
-    position: carried?.position ?? list.scrollTop,
-    velocity: carried?.velocity ?? 0,
-  }
-  stopGlide()
-  glide = state
-
-  let last = performance.now()
-  const step = (now: number) => {
-    const dt = Math.min((now - last) / 1000, 1 / 30)
-    last = now
-    const acceleration =
-      GLIDE_OMEGA * GLIDE_OMEGA * (state.target - state.position) - 2 * GLIDE_OMEGA * state.velocity
-    state.velocity += acceleration * dt
-    state.position += state.velocity * dt
-    if (Math.abs(state.target - state.position) < 0.5 && Math.abs(state.velocity) < 5) {
-      list.scrollTop = state.target
-      glide = undefined
-      return
-    }
-    list.scrollTop = state.position
-    state.frame = requestAnimationFrame(step)
-  }
-  state.frame = requestAnimationFrame(step)
-}
-
-/**
- * Scrolls the list so `row` sits a little above its middle, with the rows around it showing too.
- * Glides unless asked not to (first load) or the user prefers reduced motion.
- */
-function scrollRowIntoPlace(list: HTMLElement, row: HTMLElement, smooth: boolean) {
-  const offset = row.getBoundingClientRect().top - list.getBoundingClientRect().top
-  // an absolute position, so it is the same wherever the list happens to be mid-glide
-  const top = Math.max(0, list.scrollTop + offset - list.clientHeight * 0.35)
-  if (smooth && !prefersReducedMotion()) {
-    glideTo(list, top)
-  } else {
-    stopGlide()
-    if (Math.abs(top - list.scrollTop) >= 2) list.scrollTo({ top, behavior: "auto" })
-  }
-}
-
 function toggleExplorer(this: HTMLElement) {
   this.classList.toggle("collapsed")
   this.setAttribute(
@@ -325,35 +238,18 @@ function setupExplorer() {
   if (list) setupScrollCues(list)
   if (content) setupRovingFocus(content)
 
-  // Bring the current page into view. On the first load that is instant, after a navigation it glides.
-  const glide = explorerReady
-  explorerReady = true
+  // Keep the user's position when the selected row is already visible.
   const frame = requestAnimationFrame(() => {
     const active = list?.querySelector<HTMLElement>(
       "[aria-current='page'], .folder-container.active",
     )
-    if (list && active) scrollRowIntoPlace(list, active, glide)
+    if (!list?.clientHeight || !active) return
+    const row = active.getBoundingClientRect()
+    const viewport = list.getBoundingClientRect()
+    if (row.top < viewport.top) list.scrollTop += row.top - viewport.top
+    else if (row.bottom > viewport.bottom) list.scrollTop += row.bottom - viewport.bottom
   })
   window.addCleanup(() => cancelAnimationFrame(frame))
-
-  // Start gliding the moment a page is chosen, not once the next page has finished loading. The
-  // post-navigation pass above then finds the row already in place and does nothing.
-  function onPageClick(event: MouseEvent) {
-    if (event.defaultPrevented || event.button !== 0) return
-    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
-    const link = (event.target as HTMLElement).closest<HTMLElement>("a.explorer-file")
-    if (list && link) scrollRowIntoPlace(list, link, true)
-  }
-  content?.addEventListener("click", onPageClick)
-  // grabbing the scrollbar, wheeling or touching the list hands control straight back to the user
-  const takeOver = () => stopGlide()
-  const takeOverEvents = ["wheel", "touchstart", "pointerdown"] as const
-  if (list)
-    for (const type of takeOverEvents) list.addEventListener(type, takeOver, { passive: true })
-  window.addCleanup(() => {
-    content?.removeEventListener("click", onPageClick)
-    if (list) for (const type of takeOverEvents) list.removeEventListener(type, takeOver)
-  })
 }
 
 document.addEventListener("nav", setupExplorer)

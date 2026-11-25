@@ -102,6 +102,12 @@ const config: QuartzConfig = {
       Plugin.HostingRules({
         // old GitHub Pages paths (tan-junwei.github.io/CTF-Writeups/), in case a link or bookmark reaches the new domain
         legacyPaths: ["/CTF-Writeups"],
+        redirects: [
+          "/HackTheBox/Forensics /HackTheBox/Sherlocks/ 301",
+          "/HackTheBox/Forensics/* /HackTheBox/Sherlocks/:splat 301",
+          "/CTF-Writeups/HackTheBox/Forensics /HackTheBox/Sherlocks/ 301",
+          "/CTF-Writeups/HackTheBox/Forensics/* /HackTheBox/Sherlocks/:splat 301",
+        ],
         // Cloudflare Pages copies: the production alias and every preview deployment
         noindexHosts: [":project.pages.dev", ":version.:project.pages.dev"],
       }),

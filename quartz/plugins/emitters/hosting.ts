@@ -20,12 +20,15 @@ export const RobotsTxt: QuartzEmitterPlugin = () => ({
 interface HostingOptions {
   /** Old path prefixes (e.g. a GitHub Pages project path) that should redirect to the same page here. */
   legacyPaths: string[]
+  /** Additional path redirects in the host's _redirects format. */
+  redirects: string[]
   /** Hostname patterns in `_headers` syntax whose copies of the site must not be indexed. */
   noindexHosts: string[]
 }
 
 const defaultOptions: HostingOptions = {
   legacyPaths: [],
+  redirects: [],
   noindexHosts: [],
 }
 
@@ -76,10 +79,11 @@ export const HostingRules: QuartzEmitterPlugin<Partial<HostingOptions>> = (userO
       ]
 
       // The blog already has a /CTF-Writeups landing page. Redirect only the old nested URLs.
-      const redirects = opts.legacyPaths.map((legacy) => {
+      const legacyRedirects = opts.legacyPaths.map((legacy) => {
         const prefix = "/" + legacy.replace(/^\/+|\/+$/g, "")
         return `${prefix}/* /:splat 301`
       })
+      const redirects = [...opts.redirects, ...legacyRedirects]
 
       const emitted = [
         await write({

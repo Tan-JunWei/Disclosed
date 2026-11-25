@@ -1,6 +1,35 @@
 @use "./base.scss";
 @use "./fonts.scss";
 
+html[data-navigating]::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 10000;
+  width: 32%;
+  height: 2px;
+  background: var(--secondary);
+  pointer-events: none;
+  animation: navigation-progress 1s ease-in-out infinite;
+}
+
+@keyframes navigation-progress {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(320%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-navigating]::before {
+    width: 100%;
+    animation: none;
+  }
+}
+
 code {
   background: var(--highlight);
 }

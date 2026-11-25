@@ -38,7 +38,7 @@ export function altFromFileName(src: string): string {
 
 /**
  * Gives content images their real width and height so the browser reserves space before they load
- * (no layout shift), decodes them off the main thread, lazy-loads all but the first, and falls back
+ * (no layout shift), hints asynchronous decoding, lazy-loads all but the first two, and falls back
  * to the file name for alt text when the author did not write any. Image files are only read.
  */
 export const ImageAttributes: QuartzTransformerPlugin = () => ({
@@ -54,7 +54,8 @@ export const ImageAttributes: QuartzTransformerPlugin = () => ({
           const props = node.properties ?? (node.properties = {})
           const src = String(props.src ?? "")
           props.decoding = "async"
-          if (seen++ > 0) props.loading = "lazy"
+          if (seen === 0) props.fetchPriority = "high"
+          if (seen++ >= 2) props.loading = "lazy"
           else delete props.loading
           if (!props.alt && src) props.alt = altFromFileName(src)
           if (!src || /^[a-z]+:/i.test(src)) return

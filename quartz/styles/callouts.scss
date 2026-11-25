@@ -8,10 +8,10 @@
 // inherits a callout's tint through the site-wide --border or --bg.
 .callout {
   --callout-accent: var(--secondary);
-  --callout-wash: 15%;
+  --callout-wash: 12%;
   position: relative;
   isolation: isolate;
-  border: 1px solid color-mix(in srgb, var(--callout-accent) 38%, var(--border));
+  border: 1px solid color-mix(in srgb, var(--callout-accent) 32%, var(--border));
   border-radius: 14px;
   background: linear-gradient(
       135deg,
@@ -47,7 +47,7 @@
     background-position: right top;
     -webkit-mask-image: radial-gradient(circle at 100% 0%, #000 0%, transparent 72%);
     mask-image: radial-gradient(circle at 100% 0%, #000 0%, transparent 72%);
-    opacity: 0.55;
+    opacity: 0.48;
     pointer-events: none;
   }
 
@@ -129,7 +129,7 @@
 
 // lighter versions of the same hues, for the dark ground
 :root[saved-theme="dark"] .callout {
-  --callout-wash: 13%;
+  --callout-wash: 10%;
 
   &[data-callout="abstract"] {
     --callout-accent: oklch(0.78 0.07 228);
@@ -169,7 +169,7 @@
   // a hairline under the title separates it from the body (not when the body is folded away)
   .callout:not(.is-collapsed) > &:has(+ .callout-content) {
     margin-bottom: 0.85rem;
-    border-bottom: 1px solid color-mix(in srgb, var(--callout-accent) 22%, var(--border));
+    border-bottom: 1px solid color-mix(in srgb, var(--callout-accent) 18%, var(--border));
   }
 
   & > .callout-title-inner > p {
@@ -184,7 +184,7 @@
     width: 1.75rem;
     height: 1.75rem;
     border-radius: 8px;
-    background-color: color-mix(in srgb, var(--callout-accent) 18%, transparent);
+    background-color: color-mix(in srgb, var(--callout-accent) 15%, transparent);
 
     &::before {
       content: "";

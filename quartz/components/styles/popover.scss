@@ -1,24 +1,11 @@
 @use "../../styles/variables.scss" as *;
 
-@keyframes dropin {
-  0% {
-    opacity: 0;
-    visibility: hidden;
-  }
-  1% {
-    opacity: 0;
-  }
-  100% {
-    opacity: 1;
-    visibility: visible;
-  }
-}
-
 .popover {
   z-index: 999;
-  position: absolute;
+  position: fixed;
   overflow: visible;
   padding: 1rem;
+  user-select: none;
 
   & > .popover-inner {
     position: relative;
@@ -66,18 +53,20 @@
 
   visibility: hidden;
   opacity: 0;
-  transition:
-    opacity 0.3s ease,
-    visibility 0.3s ease;
+  pointer-events: none;
+  transition: opacity 0.16s ease;
+
+  &.is-open {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
 
   @media all and (max-width: $mobileBreakpoint) {
     display: none !important;
   }
-}
-
-a:hover .popover,
-.popover:hover {
-  animation: dropin 0.3s ease;
-  animation-fill-mode: forwards;
-  animation-delay: 0.2s;
 }

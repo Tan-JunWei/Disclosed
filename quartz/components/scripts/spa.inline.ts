@@ -54,51 +54,68 @@ const buildVersion = (doc: Document) =>
   doc.querySelector<HTMLScriptElement>('script[src*="postscript.js"]')?.src.split("?v=")[1]
 
 let p: DOMParser
-let latestNavigation = 0
+let pendingNavigation: AbortController | undefined
 async function navigate(url: URL, isBack: boolean = false) {
-  const fullLoad = () => (isBack ? window.location.reload() : window.location.assign(url))
+  pendingNavigation?.abort()
+  const request = new AbortController()
+  pendingNavigation = request
+  const { signal } = request
+  const main = document.querySelector("main")
+  main?.setAttribute("aria-busy", "true")
+  const showProgress = window.setTimeout(() => {
+    document.documentElement.setAttribute("data-navigating", "")
+  }, 150)
+  const fullLoad = () => {
+    if (!signal.aborted) {
+      if (isBack) window.location.reload()
+      else window.location.assign(url)
+    }
+  }
   try {
-    await swapPage(url, isBack, ++latestNavigation, fullLoad)
+    await swapPage(url, isBack, signal, fullLoad)
   } catch (error) {
-    console.error("Navigation failed, loading the page normally:", error)
-    fullLoad()
+    if (!signal.aborted) {
+      console.error("Navigation failed, loading the page normally:", error)
+      fullLoad()
+    }
+  } finally {
+    window.clearTimeout(showProgress)
+    if (pendingNavigation === request) {
+      pendingNavigation = undefined
+      main?.removeAttribute("aria-busy")
+      document.documentElement.removeAttribute("data-navigating")
+    }
   }
 }
 
-async function swapPage(url: URL, isBack: boolean, navigation: number, fullLoad: () => void) {
+async function swapPage(url: URL, isBack: boolean, signal: AbortSignal, fullLoad: () => void) {
   p = p || new DOMParser()
-  let contents: string | undefined
-  try {
-    const res = await fetch(`${url}`)
-    if (res.headers.get("content-type")?.startsWith("text/html")) {
-      contents = await res.text()
-    } else {
-      void res.body?.cancel().catch(() => {})
-      return fullLoad()
-    }
-  } catch {
+  const response = await fetch(url, { signal })
+  if (!response.headers.get("content-type")?.startsWith("text/html")) {
+    void response.body?.cancel().catch(() => {})
     return fullLoad()
   }
-
-  // a later click won the race, so this page is no longer wanted
-  if (navigation !== latestNavigation) return
-
-  // cleanup old
-  cleanupFns.forEach((fn) => fn())
-  cleanupFns.clear()
+  const contents = await response.text()
+  if (signal.aborted) return
+  const destination = response.redirected ? new URL(response.url) : url
+  if (response.redirected && !destination.hash) destination.hash = url.hash
 
   const html = p.parseFromString(contents, "text/html")
   // after a deploy the new page may need scripts and styles this tab does not have
   const nextVersion = buildVersion(html)
+  if (!html.body.dataset.slug) return fullLoad()
   if (nextVersion && nextVersion !== buildVersion(document)) return fullLoad()
-  normalizeRelativeURLs(html, url)
+  normalizeRelativeURLs(html, destination)
+
+  cleanupFns.forEach((fn) => fn())
+  cleanupFns.clear()
 
   let title = html.querySelector("title")?.textContent
   if (title) {
     document.title = title
   } else {
     const h1 = document.querySelector("h1")
-    title = h1?.innerText ?? h1?.textContent ?? url.pathname
+    title = h1?.innerText ?? h1?.textContent ?? destination.pathname
   }
   if (announcer.textContent !== title) {
     announcer.textContent = title
@@ -111,11 +128,11 @@ async function swapPage(url: URL, isBack: boolean, navigation: number, fullLoad:
 
   // scroll into place and add history
   if (!isBack) {
-    if (url.hash) {
-      const el = document.getElementById(decodeURIComponent(url.hash.substring(1)))
+    if (destination.hash) {
+      const el = document.getElementById(decodeURIComponent(destination.hash.substring(1)))
       el?.scrollIntoView()
     } else {
-      window.scrollTo({ top: 0 })
+      window.scrollTo({ top: 0, behavior: "instant" })
     }
   }
 
@@ -141,7 +158,9 @@ async function swapPage(url: URL, isBack: boolean, navigation: number, fullLoad:
   // delay setting the url until now
   // at this point everything is loaded so changing the url should resolve to the correct addresses
   if (!isBack) {
-    history.pushState({}, "", url)
+    history.pushState({}, "", destination)
+  } else if (response.redirected) {
+    history.replaceState({}, "", destination)
   }
   notifyNav(getFullSlug(window))
   delete announcer.dataset.persist
