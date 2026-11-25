@@ -1,0 +1,3 @@
+[lfs]
+	# The disk image exceeds the site's asset size limit.
+	fetchexclude = content/Assets/Creation/Forensics/disk.img.gz
