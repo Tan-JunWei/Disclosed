@@ -40,7 +40,7 @@ export default {
     },
     recentNotes: {
       title: "最近の記事",
-      seeRemainingMore: ({ remaining }) => `さらに${remaining}件 →`,
+      seeRemainingMore: ({ remaining }) => `さらに${remaining}件`,
     },
     transcludes: {
       transcludeOf: ({ targetSlug }) => `${targetSlug}のまとめ`,

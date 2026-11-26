@@ -40,7 +40,7 @@ export default {
     },
     recentNotes: {
       title: "یادداشت‌های اخیر",
-      seeRemainingMore: ({ remaining }) => `${remaining} یادداشت دیگر →`,
+      seeRemainingMore: ({ remaining }) => `${remaining} یادداشت دیگر`,
     },
     transcludes: {
       transcludeOf: ({ targetSlug }) => `از ${targetSlug}`,

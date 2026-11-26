@@ -9,7 +9,9 @@ const PageTitle: QuartzComponent = ({ fileData, cfg, ctx, displayClass }: Quartz
   const logo = `${joinSegments(baseDir, "static/logo.svg")}?v=${assetVersion(ctx.buildId)}`
   return (
     <div class={classNames(displayClass, "page-title")}>
-      <img class="site-logo" src={logo} width="325" height="64" alt={cfg.pageTitle} />
+      <a href={`${baseDir}/`} aria-label={`${cfg.pageTitle} home`}>
+        <img class="site-logo" src={logo} width="325" height="64" alt={cfg.pageTitle} />
+      </a>
     </div>
   )
 }

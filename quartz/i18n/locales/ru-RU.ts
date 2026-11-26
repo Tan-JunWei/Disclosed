@@ -41,7 +41,7 @@ export default {
     recentNotes: {
       title: "Недавние заметки",
       seeRemainingMore: ({ remaining }) =>
-        `Посмотреть оставш${getForm(remaining, "уюся", "иеся", "иеся")} ${remaining} →`,
+        `Посмотреть оставш${getForm(remaining, "уюся", "иеся", "иеся")} ${remaining}`,
     },
     transcludes: {
       transcludeOf: ({ targetSlug }) => `Переход из ${targetSlug}`,

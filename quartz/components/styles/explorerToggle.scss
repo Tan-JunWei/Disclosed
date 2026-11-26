@@ -32,15 +32,33 @@
 }
 
 @media all and (max-width: $fullPageWidth) {
-  body.explorer-open #explorer-backdrop {
+  body {
+    --explorer-drawer-motion: 340ms cubic-bezier(0.33, 0, 0.2, 1);
+  }
+
+  #explorer-backdrop {
     display: block;
     position: fixed;
     inset: 0;
-    background-color: rgba(0, 0, 0, 0.4);
+    background-color: rgb(0 0 0 / 40%);
     z-index: 999;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--explorer-drawer-motion);
+  }
+
+  body.explorer-open #explorer-backdrop {
+    opacity: 1;
+    pointer-events: auto;
   }
 
   body.explorer-open {
     overflow: hidden;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #explorer-backdrop {
+    transition: none;
   }
 }

@@ -40,7 +40,7 @@ export default {
     },
     recentNotes: {
       title: "Legutóbbi jegyzetek",
-      seeRemainingMore: ({ remaining }) => `${remaining} további megtekintése →`,
+      seeRemainingMore: ({ remaining }) => `${remaining} további megtekintése`,
     },
     transcludes: {
       transcludeOf: ({ targetSlug }) => `${targetSlug} áthivatkozása`,

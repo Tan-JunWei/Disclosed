@@ -40,7 +40,7 @@ export default {
     },
     recentNotes: {
       title: "Останні нотатки",
-      seeRemainingMore: ({ remaining }) => `Переглянути ще ${remaining} →`,
+      seeRemainingMore: ({ remaining }) => `Переглянути ще ${remaining}`,
     },
     transcludes: {
       transcludeOf: ({ targetSlug }) => `Видобуто з ${targetSlug}`,

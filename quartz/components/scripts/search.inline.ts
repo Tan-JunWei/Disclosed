@@ -2,15 +2,12 @@ import type FlexSearch from "flexsearch"
 import type * as SearchEngine from "./search/engine"
 import { fuzzySearchScore } from "../../util/postFilters"
 import { ContentDetails } from "../../plugins/emitters/contentIndex"
-import { registerEscapeHandler, removeAllChildren } from "./util"
+import { registerEscapeHandler } from "./util"
 import { FullSlug, normalizeRelativeURLs, resolveRelative } from "../../util/path"
 
 type Item = SearchEngine.Item
 
-// Can be expanded with things like "term" in the future
 type SearchType = "basic" | "tags"
-let searchType: SearchType = "basic"
-let currentSearchTerm: string = ""
 let index: SearchEngine.SearchIndex | undefined
 
 type SearchData = { [key: FullSlug]: ContentDetails }
@@ -45,7 +42,6 @@ function loadSearchData(currentSlug: FullSlug): Promise<SearchData> {
 const p = new DOMParser()
 const fetchContentCache: Map<FullSlug, Element[]> = new Map()
 const contextWindowWords = 30
-const numSearchResults = 8
 const numTagResults = 5
 
 const tokenizeTerm = (term: string) => {
@@ -159,6 +155,8 @@ document.addEventListener("nav", async (e: CustomEventMap["nav"]) => {
   const sidebar = container?.closest(".sidebar") as HTMLElement
   const searchButton = document.getElementById("search-button")
   const searchBar = document.getElementById("search-bar") as HTMLInputElement | null
+  const searchClose = document.getElementById("search-close")
+  const suggestions = document.getElementById("search-suggestions")
   const searchLayout = document.getElementById("search-layout")
 
   const appendLayout = (el: HTMLElement) => {
@@ -169,7 +167,10 @@ document.addEventListener("nav", async (e: CustomEventMap["nav"]) => {
 
   const enablePreview = searchLayout?.dataset?.preview === "true"
   let preview: HTMLDivElement | undefined = undefined
-  let previewInner: HTMLDivElement | undefined = undefined
+  let previewRequest = 0
+  let searchRequest = 0
+  let previewTerm = ""
+  let displayedQuery = ""
   const results = document.createElement("div")
   results.id = "results-container"
   appendLayout(results)
@@ -180,7 +181,16 @@ document.addEventListener("nav", async (e: CustomEventMap["nav"]) => {
     appendLayout(preview)
   }
 
+  function showSuggestions() {
+    previewRequest++
+    if (suggestions) suggestions.hidden = false
+    searchLayout?.classList.remove("display-results")
+    results.replaceChildren()
+    preview?.replaceChildren()
+  }
+
   function hideSearch() {
+    searchRequest++
     container?.classList.remove("active")
     searchButton?.setAttribute("aria-expanded", "false")
     if (searchBar) {
@@ -189,35 +199,25 @@ document.addEventListener("nav", async (e: CustomEventMap["nav"]) => {
     if (sidebar) {
       sidebar.style.zIndex = "unset"
     }
-    if (results) {
-      removeAllChildren(results)
-    }
-    if (preview) {
-      removeAllChildren(preview)
-    }
-    if (searchLayout) {
-      searchLayout.classList.remove("display-results")
-    }
-
-    searchType = "basic" // reset search type after closing
+    showSuggestions()
 
     searchButton?.focus()
   }
 
   function showSearch(searchTypeNew: SearchType) {
-    searchType = searchTypeNew
     if (sidebar) {
       sidebar.style.zIndex = "1"
     }
     container?.classList.add("active")
     searchButton?.setAttribute("aria-expanded", "true")
-    searchBar?.focus()
-    void ready()
+    if (searchBar) {
+      searchBar.value = searchTypeNew === "tags" ? "#" : ""
+      searchBar.focus()
+    }
+    void ready().catch(() => {})
   }
 
-  let currentHover: HTMLInputElement | null = null
-
-  async function shortcutHandler(e: HTMLElementEventMap["keydown"]) {
+  function shortcutHandler(e: HTMLElementEventMap["keydown"]) {
     if (e.key === "k" && (e.ctrlKey || e.metaKey) && !e.shiftKey) {
       e.preventDefault()
       const searchBarOpen = container?.classList.contains("active")
@@ -229,73 +229,59 @@ document.addEventListener("nav", async (e: CustomEventMap["nav"]) => {
       const searchBarOpen = container?.classList.contains("active")
       searchBarOpen ? hideSearch() : showSearch("tags")
 
-      // add "#" prefix for tag search
-      if (searchBar) searchBar.value = "#"
       return
     }
 
-    if (currentHover) {
-      currentHover.classList.remove("focus")
-    }
+    if (!container?.classList.contains("active") || e.isComposing) return
+    const active = document.activeElement
+    const choices = suggestions?.hidden
+      ? Array.from(results.querySelectorAll<HTMLAnchorElement>("a.result-card"))
+      : Array.from(suggestions?.querySelectorAll<HTMLElement>("button, a[href]") ?? [])
+    const focusedChoice = choices.findIndex((choice) => choice === active)
 
-    // If search is active, then we will render the first result and display accordingly
-    if (!container?.classList.contains("active")) return
-    if (e.key === "Enter") {
-      // If result has focus, navigate to that one, otherwise pick first result
-      if (results?.contains(document.activeElement)) {
-        const active = document.activeElement as HTMLInputElement
-        if (active.classList.contains("no-match")) return
-        await displayPreview(active)
-        active.click()
-      } else {
-        const anchor = document.getElementsByClassName("result-card")[0] as HTMLInputElement | null
-        if (!anchor || anchor?.classList.contains("no-match")) return
-        await displayPreview(anchor)
-        anchor.click()
-      }
-    } else if (e.key === "ArrowUp" || (e.shiftKey && e.key === "Tab")) {
+    if (
+      e.key === "Enter" &&
+      active === searchBar &&
+      suggestions?.hidden &&
+      searchBar?.value.trim() === displayedQuery
+    ) {
+      choices[0]?.click()
+    } else if (e.key === "ArrowDown" && (active === searchBar || focusedChoice >= 0)) {
       e.preventDefault()
-      if (results?.contains(document.activeElement)) {
-        // If an element in results-container already has focus, focus previous one
-        const currentResult = currentHover
-          ? currentHover
-          : (document.activeElement as HTMLInputElement | null)
-        const prevResult = currentResult?.previousElementSibling as HTMLInputElement | null
-        currentResult?.classList.remove("focus")
-        prevResult?.focus()
-        if (prevResult) currentHover = prevResult
-        await displayPreview(prevResult)
-      }
-    } else if (e.key === "ArrowDown" || e.key === "Tab") {
+      choices[focusedChoice + 1]?.focus()
+    } else if (e.key === "ArrowUp" && focusedChoice >= 0) {
       e.preventDefault()
-      // The results should already been focused, so we need to find the next one.
-      // The activeElement is the search bar, so we need to find the first result and focus it.
-      if (document.activeElement === searchBar || currentHover !== null) {
-        const firstResult = currentHover
-          ? currentHover
-          : (document.getElementsByClassName("result-card")[0] as HTMLInputElement | null)
-        const secondResult = firstResult?.nextElementSibling as HTMLInputElement | null
-        firstResult?.classList.remove("focus")
-        secondResult?.focus()
-        if (secondResult) currentHover = secondResult
-        await displayPreview(secondResult)
+      const previous = choices[focusedChoice - 1] ?? searchBar
+      previous?.focus()
+    } else if (e.key === "Tab" && container) {
+      const controls = Array.from(
+        container.querySelectorAll<HTMLElement>("input, button, a[href]"),
+      ).filter((element) => element.tabIndex >= 0 && element.getClientRects().length > 0)
+      const first = controls[0]
+      const last = controls.at(-1)
+      if (e.shiftKey && active === first) {
+        e.preventDefault()
+        last?.focus()
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault()
+        first?.focus()
       }
     }
   }
 
-  const formatForDisplay = (term: string, id: number) => {
+  const formatForDisplay = (term: string, id: number, searchType: SearchType) => {
     const slug = idDataMap[id]
     return {
       id,
       slug,
       title: searchType === "tags" ? data[slug].title : highlight(term, data[slug].title ?? ""),
       content: highlight(term, data[slug].content ?? "", true),
-      tags: highlightTags(term.substring(1), data[slug].tags),
+      tags: searchType === "tags" ? highlightTags(term, data[slug].tags) : [],
     }
   }
 
   function highlightTags(term: string, tags: string[]) {
-    if (!tags || searchType !== "tags") {
+    if (!tags) {
       return []
     }
 
@@ -327,46 +313,52 @@ document.addEventListener("nav", async (e: CustomEventMap["nav"]) => {
       hideSearch()
     }
 
-    async function onMouseEnter(ev: MouseEvent) {
-      if (!ev.target) return
-      const target = ev.target as HTMLInputElement
-      results.querySelector(".focus")?.classList.remove("focus")
-      target.classList.add("focus")
-      currentHover = target
-      await displayPreview(target)
-    }
-
-    itemTile.addEventListener("mouseenter", onMouseEnter)
-    window.addCleanup(() => itemTile.removeEventListener("mouseenter", onMouseEnter))
+    itemTile.addEventListener("mouseenter", () => showResultPreview(itemTile))
+    itemTile.addEventListener("focus", () => showResultPreview(itemTile))
     itemTile.addEventListener("click", handler)
-    window.addCleanup(() => itemTile.removeEventListener("click", handler))
 
     return itemTile
   }
 
-  async function displayResults(finalResults: Item[]) {
-    if (!results) return
+  function showResults() {
+    if (suggestions) suggestions.hidden = true
+    searchLayout?.classList.add("display-results")
+    preview?.replaceChildren()
+  }
 
-    removeAllChildren(results)
+  function showSearchMessage(title: string, text: string) {
+    const message = document.createElement("div")
+    message.className = "result-card no-match"
+    message.setAttribute("role", "status")
+    const heading = document.createElement("h3")
+    heading.textContent = title
+    const body = document.createElement("p")
+    body.textContent = text
+    message.append(heading, body)
+    results.replaceChildren(message)
+    showResults()
+  }
+
+  function showResultPreview(result: HTMLElement) {
+    results.querySelector(".focus")?.classList.remove("focus")
+    result.classList.add("focus")
+    void displayPreview(result)
+  }
+
+  function displayResults(finalResults: Item[]) {
     if (finalResults.length === 0) {
-      results.innerHTML = `<a class="result-card no-match">
-          <h3>No results.</h3>
-          <p>Try another search term?</p>
-      </a>`
-    } else {
-      results.append(...finalResults.map(resultToHTML))
+      showSearchMessage("No results", "Try another search term.")
+      return
     }
-
-    if (finalResults.length === 0 && preview) {
-      // no results, clear previous preview
-      removeAllChildren(preview)
-    } else {
-      // focus on first result, then also dispatch preview immediately
-      const firstChild = results.firstElementChild as HTMLElement
-      firstChild.classList.add("focus")
-      currentHover = firstChild as HTMLInputElement
-      await displayPreview(firstChild)
-    }
+    const cards = finalResults.map(resultToHTML)
+    const count = document.createElement("p")
+    count.className = "search-result-count"
+    count.setAttribute("role", "status")
+    count.textContent = `${cards.length} ${cards.length === 1 ? "result" : "results"}`
+    results.replaceChildren(count, ...cards)
+    results.scrollTop = 0
+    showResults()
+    showResultPreview(cards[0])
   }
 
   async function fetchContent(slug: FullSlug): Promise<Element[]> {
@@ -390,16 +382,16 @@ document.addEventListener("nav", async (e: CustomEventMap["nav"]) => {
     }
   }
 
-  let previewRequest = 0
-  async function displayPreview(el: HTMLElement | null) {
-    if (!searchLayout || !enablePreview || !el || !preview) return
+  async function displayPreview(el: HTMLElement) {
+    if (!preview || !preview.getClientRects().length) return
     const request = ++previewRequest
     const slug = el.id as FullSlug
+    const term = previewTerm
     const innerDiv = await fetchContent(slug).then((contents) =>
-      contents.flatMap((el) => [...highlightHTML(currentSearchTerm, el as HTMLElement).children]),
+      contents.flatMap((el) => [...highlightHTML(term, el as HTMLElement).children]),
     )
     if (request !== previewRequest || !container?.classList.contains("active")) return
-    previewInner = document.createElement("div")
+    const previewInner = document.createElement("div")
     previewInner.classList.add("preview-inner")
     previewInner.append(...innerDiv)
     preview.replaceChildren(previewInner)
@@ -411,20 +403,27 @@ document.addEventListener("nav", async (e: CustomEventMap["nav"]) => {
     highlights[0]?.scrollIntoView({ block: "start" })
   }
 
-  let searchRequest = 0
-  async function onType(e: HTMLElementEventMap["input"]) {
-    if (!searchLayout) return
+  async function runSearch() {
+    if (!searchBar || !searchLayout) return
     const request = ++searchRequest
-    const term = (e.target as HTMLInputElement).value
+    previewRequest++
+    const term = searchBar.value.trim()
+    if (term === "" || term === "#") {
+      showSuggestions()
+      return
+    }
     try {
       await ready()
     } catch {
+      if (request === searchRequest) {
+        showSearchMessage("Search is unavailable", "Try entering your search again.")
+      }
       return
     }
     if (request !== searchRequest || !index) return
-    currentSearchTerm = term
-    searchLayout.classList.toggle("display-results", currentSearchTerm !== "")
-    searchType = currentSearchTerm.startsWith("#") ? "tags" : "basic"
+    let currentSearchTerm = term
+    let searchType: SearchType = term.startsWith("#") ? "tags" : "basic"
+    const limit = idDataMap.length
 
     let tagConstraint: string | undefined
     let searchResults: FlexSearch.SimpleDocumentSearchResultSetUnit[]
@@ -438,29 +437,25 @@ document.addEventListener("nav", async (e: CustomEventMap["nav"]) => {
         const query = currentSearchTerm.substring(separatorIndex + 1).trim()
         searchResults = await index.searchAsync({
           query: query,
-          // return at least 10000 documents, so it is enough to filter them by tag (implemented in flexsearch)
-          limit: Math.max(numSearchResults, 10000),
+          limit,
           index: ["title", "content"],
-          tag: tag,
+          tag: tag.toLowerCase(),
         })
-        for (let searchResult of searchResults) {
-          searchResult.result = searchResult.result.slice(0, numSearchResults)
-        }
-        // set search type to basic and remove tag from term for proper highlightning and scroll
+        // Highlight only the text query after filtering by tag.
         searchType = "basic"
         currentSearchTerm = query
       } else {
         // default search by tags index
         searchResults = await index.searchAsync({
           query: currentSearchTerm,
-          limit: numSearchResults,
+          limit,
           index: ["tags"],
         })
       }
     } else if (searchType === "basic") {
       searchResults = await index.searchAsync({
         query: currentSearchTerm,
-        limit: numSearchResults,
+        limit,
         index: ["title", "content"],
       })
     }
@@ -496,10 +491,12 @@ document.addEventListener("nav", async (e: CustomEventMap["nav"]) => {
       ...fuzzyIds.map((match) => match.id),
       ...allIds,
     ])
-    const finalResults = [...rankedIds]
-      .slice(0, numSearchResults)
-      .map((id) => formatForDisplay(currentSearchTerm, id))
-    await displayResults(finalResults)
+    const finalResults = [...rankedIds].map((id) =>
+      formatForDisplay(currentSearchTerm, id, searchType),
+    )
+    displayedQuery = term
+    previewTerm = currentSearchTerm
+    displayResults(finalResults)
   }
 
   document.addEventListener("keydown", shortcutHandler)
@@ -512,14 +509,26 @@ document.addEventListener("nav", async (e: CustomEventMap["nav"]) => {
       `${searchButton.querySelector(".search-label")?.textContent} ⌘ K`,
     )
   }
-  const searchClose = document.getElementById("search-close")
   searchClose?.addEventListener("click", hideSearch)
   window.addCleanup(() => searchClose?.removeEventListener("click", hideSearch))
   const openSearch = () => showSearch("basic")
   searchButton?.addEventListener("click", openSearch)
   window.addCleanup(() => searchButton?.removeEventListener("click", openSearch))
-  searchBar?.addEventListener("input", onType)
-  window.addCleanup(() => searchBar?.removeEventListener("input", onType))
+  searchBar?.addEventListener("input", runSearch)
+  window.addCleanup(() => searchBar?.removeEventListener("input", runSearch))
+  function useSuggestedTopic(event: MouseEvent) {
+    const topic = (event.target as Element).closest<HTMLElement>("[data-search-query]")
+    if (!searchBar || !topic?.dataset.searchQuery) return
+    searchBar.value = topic.dataset.searchQuery
+    searchBar.focus()
+    void runSearch()
+  }
+  suggestions?.addEventListener("click", useSuggestedTopic)
+  window.addCleanup(() => suggestions?.removeEventListener("click", useSuggestedTopic))
+  window.addCleanup(() => {
+    searchRequest++
+    previewRequest++
+  })
 
   registerEscapeHandler(container, () => {
     if (container?.classList.contains("active")) hideSearch()

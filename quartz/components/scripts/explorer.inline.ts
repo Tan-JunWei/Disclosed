@@ -1,7 +1,7 @@
 import { FolderState } from "../ExplorerNode"
 
 type MaybeHTMLElement = HTMLElement | undefined
-let currentExplorerState: FolderState[]
+let currentExplorerState: Map<string, boolean>
 let explorerReady = false
 
 // every row the keyboard can land on: the pinned Explore link, folder rows and page links
@@ -27,19 +27,20 @@ function toggleFolder(evt: MouseEvent) {
 
   const row = target.closest<HTMLElement>(".folder-container")
   const folder = row?.nextElementSibling as MaybeHTMLElement
-  const path = row?.querySelector<HTMLElement>("[data-folderpath]")?.dataset.folderpath
-  if (!folder || !path) return
+  if (!row || !folder) return
   document
     .querySelectorAll(".explorer .folder-container.is-selected")
     .forEach((element) => element.classList.remove("is-selected"))
-  row?.classList.add("is-selected")
+  row.classList.add("is-selected")
   const collapsed = folder.classList.contains("open")
-  setFolderState(folder, collapsed)
-  const entry = currentExplorerState.find((entry) => entry.path === path)
-  if (entry) entry.collapsed = collapsed
-  if (document.getElementById("explorer")?.dataset.savestate === "true") {
-    localStorage.setItem("fileTree", JSON.stringify(currentExplorerState))
+  if (!collapsed) {
+    const siblings = folder.closest("li")?.parentElement
+    siblings
+      ?.querySelectorAll<HTMLElement>(":scope > li > .folder-outer.open")
+      .forEach((sibling) => setFolderState(sibling, true))
   }
+  setFolderState(folder, collapsed)
+  saveFolderState(document.getElementById("explorer"))
 }
 
 /**
@@ -141,6 +142,7 @@ function setupRovingFocus(content: HTMLElement) {
   const observer = new MutationObserver(sync)
   const drawer = content.closest<HTMLElement>(".explorer")
   if (drawer) observer.observe(drawer, { attributes: true, attributeFilter: ["inert", "class"] })
+  observer.observe(content, { subtree: true, attributes: true, attributeFilter: ["inert"] })
   observer.observe(document.body, { attributes: true, attributeFilter: ["class"] })
   window.addEventListener("resize", sync)
 
@@ -216,27 +218,17 @@ function setupExplorer() {
   const newExplorerState: FolderState[] = explorer.dataset.tree
     ? JSON.parse(explorer.dataset.tree)
     : []
-  currentExplorerState = []
-  for (const { path, collapsed } of newExplorerState) {
-    currentExplorerState.push({ path, collapsed: oldIndex.get(path) ?? collapsed })
-  }
-
-  currentExplorerState.forEach((folderState) => {
-    const folderLi = [...document.querySelectorAll<HTMLElement>("[data-folderpath]")].find(
-      (element) => element.dataset.folderpath === folderState.path,
-    )
-    const folderUl = folderLi?.parentElement?.nextElementSibling as MaybeHTMLElement
-    if (folderUl) {
-      const active = document.querySelector(".explorer [aria-current='page']")
-      const ancestor = active && folderUl.contains(active)
-      const currentFolder = folderLi?.parentElement?.classList.contains("active")
-      setFolderState(folderUl, ancestor || currentFolder ? false : folderState.collapsed)
-    }
-  })
+  currentExplorerState = new Map(
+    newExplorerState.map(({ path, collapsed }) => [path, oldIndex.get(path) ?? collapsed]),
+  )
 
   const list = document.getElementById("explorer-ul")
   const content = document.getElementById("explorer-content")
-  if (list) setupScrollCues(list)
+  if (list) {
+    restoreFolders(list)
+    saveFolderState(explorer)
+    setupScrollCues(list)
+  }
   if (content) setupRovingFocus(content)
 
   const smooth = explorerReady && !matchMedia("(prefers-reduced-motion: reduce)").matches
@@ -257,16 +249,42 @@ function setupExplorer() {
 
 document.addEventListener("nav", setupExplorer)
 
-/**
- * Toggles the state of a given folder
- * @param folderElement <div class="folder-outer"> Element of folder (parent)
- * @param collapsed if folder should be set to collapsed or not
- */
+function restoreFolders(list: HTMLElement) {
+  const folders = list.querySelectorAll<HTMLElement>(".folder-container + .folder-outer")
+  const openByParent = new Map<HTMLElement, HTMLElement>()
+
+  for (const folder of folders) {
+    const parentList = folder.closest("li")?.parentElement
+    if (!parentList) continue
+    const row = folder.previousElementSibling
+    const path = folder.querySelector<HTMLElement>(":scope > ul")?.dataset.folderul
+    const onCurrentPath = row?.matches(".active, .is-current-path")
+    if (
+      onCurrentPath ||
+      (path && currentExplorerState.get(path) === false && !openByParent.has(parentList))
+    ) {
+      openByParent.set(parentList, folder)
+    }
+  }
+
+  const open = new Set(openByParent.values())
+  for (const folder of folders) setFolderState(folder, !open.has(folder))
+}
+
+function saveFolderState(explorer: HTMLElement | null) {
+  if (explorer?.dataset.savestate !== "true") return
+  const state = Array.from(currentExplorerState, ([path, collapsed]) => ({ path, collapsed }))
+  localStorage.setItem("fileTree", JSON.stringify(state))
+}
+
 function setFolderState(folderElement: HTMLElement, collapsed: boolean) {
+  const path = folderElement.querySelector<HTMLElement>(":scope > ul")?.dataset.folderul
+  if (path) currentExplorerState.set(path, collapsed)
   folderElement.classList.toggle("open", !collapsed)
   folderElement.inert = collapsed
   const row = folderElement.previousElementSibling
   row
     ?.querySelectorAll("button")
     .forEach((button) => button.setAttribute("aria-expanded", String(!collapsed)))
+  row?.querySelector(".folder-link")?.setAttribute("data-folder-open", String(!collapsed))
 }

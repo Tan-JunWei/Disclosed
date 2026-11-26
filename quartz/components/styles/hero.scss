@@ -154,18 +154,10 @@
   background: transparent;
   color: #c3d0dd;
 
-  .lab-created-arrow {
-    transition: transform 0.2s ease;
-  }
-
   &:hover {
     border-color: #6f94b8;
     background: #131d28;
     color: #edf1f5;
-
-    .lab-created-arrow {
-      transform: translateX(3px);
-    }
   }
 }
 
@@ -536,10 +528,6 @@
     flex-shrink: 0;
     font-size: 0.75rem;
     font-weight: 600;
-
-    span {
-      margin-left: 0.4rem;
-    }
   }
 }
 
@@ -631,77 +619,38 @@ a.lab-route {
   // no corner wash here, so the pastels stay clean
   &[data-accent="compass"] {
     background: var(--surface);
-    border-color: transparent;
-
-    // the border carries the same colours, held still. The button flows with the squares and title
-    &::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-      z-index: -1;
-      padding: 1px;
-      border-radius: inherit;
-      background: var(--ink-still);
-      -webkit-mask:
-        linear-gradient(#000 0 0) content-box,
-        linear-gradient(#000 0 0);
-      -webkit-mask-composite: xor;
-      mask:
-        linear-gradient(#000 0 0) content-box,
-        linear-gradient(#000 0 0);
-      mask-composite: exclude;
-      opacity: 0.55;
-      pointer-events: none;
-      transition: opacity 0.2s ease;
-    }
 
     .lab-route-cta {
+      --cta-border-ink: var(--ink-a);
+      --route-accent: var(--cta-border-ink);
       position: relative;
-      border-color: transparent;
-      background-image: flow-gradient(90deg, ink);
-      background-size: 300% 100%;
-      animation: tile-flow 9s linear infinite;
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
+      isolation: isolate;
+      animation: cta-border-flow 9s linear infinite;
+      transition: none;
 
-      &::before {
+      &::after {
         content: "";
         position: absolute;
-        inset: -1px;
-        padding: 1px;
+        inset: 0;
+        z-index: -1;
         border-radius: inherit;
-        background-image: flow-gradient(90deg, ink);
+        background-image: flow-gradient(90deg, tile);
         background-size: 300% 100%;
         animation: tile-flow 9s linear infinite;
-        -webkit-mask:
-          linear-gradient(#000 0 0) content-box,
-          linear-gradient(#000 0 0);
-        -webkit-mask-composite: xor;
-        mask:
-          linear-gradient(#000 0 0) content-box,
-          linear-gradient(#000 0 0);
-        mask-composite: exclude;
-        opacity: 0.75;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+        pointer-events: none;
       }
     }
 
     &:hover,
     &:focus-visible {
-      border-color: transparent;
-
-      &::after {
-        opacity: 1;
-      }
-      .lab-route-cta {
-        -webkit-background-clip: border-box;
-        background-clip: border-box;
-        border-color: transparent;
-        color: var(--light);
+      .lab-route-cta::after {
+        opacity: 0.3;
       }
     }
 
-    // the count and title carry the same flowing gradient, in deeper shades so they stay readable
+    .lab-route-cta > span,
     .lab-route-num,
     h3 {
       width: fit-content;
@@ -712,6 +661,15 @@ a.lab-route {
       background-clip: text;
       color: transparent;
       animation: tile-flow 9s linear infinite;
+    }
+
+    .lab-route-cta > span {
+      // Keep the hue shift and pull the small label toward the theme's text color.
+      @each $stop in a, b, c, d {
+        --label-ink-#{$stop}: color-mix(in srgb, var(--ink-#{$stop}) 45%, var(--dark));
+      }
+
+      background-image: flow-gradient(90deg, label-ink);
     }
   }
   &[data-accent="compass"]:hover::before,
@@ -778,14 +736,12 @@ a.lab-route {
     .lab-route-art {
       transform: translateY(-2px) rotate(-3deg) scale(1.05);
     }
-    .lab-route-cta {
-      background-color: var(--route-accent);
-      border-color: var(--route-accent);
-      color: var(--light);
+  }
 
-      span {
-        transform: translateX(3px);
-      }
+  &:not([data-accent="compass"]):is(:hover, :focus-visible) {
+    .lab-route-cta {
+      background-color: color-mix(in srgb, var(--route-accent) 14%, transparent);
+      border-color: var(--route-accent);
     }
   }
 
@@ -896,25 +852,18 @@ a.lab-route {
 }
 
 .lab-route-cta {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
   align-self: flex-start;
   margin-top: auto;
   padding: 0.36rem 0.8rem;
   border: 1px solid color-mix(in srgb, var(--route-accent) 45%, var(--border));
   border-radius: 999px;
+  background-color: transparent;
   font-size: 0.74rem;
   font-weight: 600;
   color: var(--route-accent);
   transition:
     background-color 0.2s ease,
-    border-color 0.2s ease,
-    color 0.2s ease;
-
-  span {
-    transition: transform 0.2s ease;
-  }
+    border-color 0.2s ease;
 }
 
 @media (max-width: 600px) {
@@ -952,8 +901,7 @@ a.lab-route {
   .lab-hero {
     transition: none !important;
   }
-  .lab-hero .hd-kpi-arrow,
-  .lab-hero .lab-created-arrow {
+  .lab-hero .hd-kpi-arrow {
     transform: none !important;
   }
 }
@@ -1022,13 +970,6 @@ a.lab-route:focus-visible .ctf-hub-logo {
   --ink-b: oklch(0.68 0.15 5);
   --ink-c: oklch(0.66 0.1 215);
   --ink-d: oklch(0.68 0.12 175);
-  --ink-still: linear-gradient(
-    100deg,
-    var(--ink-a),
-    var(--ink-b) 35%,
-    var(--ink-c) 70%,
-    var(--ink-d)
-  );
 }
 :root[saved-theme="dark"] {
   --tile-a: hsl(28 62% 62%);
@@ -1045,6 +986,11 @@ a.lab-route:focus-visible .ctf-hub-logo {
   syntax: "<percentage>";
   inherits: false;
   initial-value: 0%;
+}
+@property --cta-border-ink {
+  syntax: "<color>";
+  inherits: false;
+  initial-value: #8d717c;
 }
 @keyframes tile-flow {
   to {
@@ -1066,13 +1012,31 @@ a.lab-route:focus-visible .ctf-hub-logo {
     stop-color: var(--ink-d);
   }
 }
+@keyframes cta-border-flow {
+  0%,
+  100% {
+    --cta-border-ink: var(--ink-a);
+  }
+  25% {
+    --cta-border-ink: var(--ink-b);
+  }
+  50% {
+    --cta-border-ink: var(--ink-c);
+  }
+  75% {
+    --cta-border-ink: var(--ink-d);
+  }
+}
 @media (prefers-reduced-motion: reduce) {
-  .lab-route[data-accent="compass"]::before,
-  .lab-route[data-accent="compass"] .lab-route-num,
-  .lab-route[data-accent="compass"] h3,
-  .lab-route[data-accent="compass"] .lab-route-cta,
-  .lab-route[data-accent="compass"] .lab-route-cta::before,
-  .lab-route[data-accent="compass"] stop {
-    animation: none;
+  a.lab-route[data-accent="compass"] {
+    &::before,
+    .lab-route-num,
+    h3,
+    .lab-route-cta,
+    .lab-route-cta > span,
+    .lab-route-cta::after,
+    stop {
+      animation: none;
+    }
   }
 }

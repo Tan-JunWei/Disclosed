@@ -23,9 +23,8 @@
       <stop offset="1" stop-color="#B9D4E6"/>
     </linearGradient>
     <linearGradient id="wordmark-ink" x1="82" y1="15" x2="324" y2="50" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#7874AE"/>
-      <stop offset=".52" stop-color="#4C7FA7"/>
-      <stop offset="1" stop-color="#3F8280"/>
+      <stop stop-color="#806D9E"/>
+      <stop offset="1" stop-color="#777777"/>
     </linearGradient>
   </defs>
   <rect x=".75" y=".75" width="62.5" height="62.5" rx="15.25" fill="url(#surface)" stroke="url(#edge)" stroke-width="1.5"/>
@@ -45,6 +44,6 @@
       <path d="M271 25h12l8 7v8h-20v2l3 2h12l4 4-4 2h-15l-7-6V32Zm3 6-3 3v1h13v-1l-3-3Z" transform="translate(-1)"/>
       <path d="M317 15h7l-1.5 7v28H317v-2l-3 2h-11l-8-7V32l8-7h11l3 2V15Zm-11 16-4 3.5v6l4 3.5h7l4-3.5v-6l-4-3.5Z" transform="translate(-1)"/>
     </g>
-    <path fill="#7769A8" d="M118.5 15h6v6.5H117Z"/>
+    <path d="M118.5 15h6v6.5H117Z"/>
   </g>
 </svg>

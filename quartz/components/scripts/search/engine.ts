@@ -40,7 +40,7 @@ export async function buildIndex(data: Record<FullSlug, ContentDetails>): Promis
         slug: slug as FullSlug,
         title: details.title,
         content: details.content,
-        tags: details.tags,
+        tags: details.tags.map((tag) => tag.toLowerCase()),
       }),
     ),
   )

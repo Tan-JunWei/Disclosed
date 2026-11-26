@@ -40,7 +40,7 @@ export default {
     },
     recentNotes: {
       title: "Notițe recente",
-      seeRemainingMore: ({ remaining }) => `Vezi încă ${remaining} →`,
+      seeRemainingMore: ({ remaining }) => `Vezi încă ${remaining}`,
     },
     transcludes: {
       transcludeOf: ({ targetSlug }) => `Extras din ${targetSlug}`,

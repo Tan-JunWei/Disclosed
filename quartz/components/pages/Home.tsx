@@ -644,9 +644,7 @@ const Home: QuartzComponent = (props: QuartzComponentProps) => {
             />
             <span class="lab-owner-text">
               <span class="lab-owner-name">Jun Wei Tan</span>
-              <span class="lab-owner-role">
-                LinkedIn <span aria-hidden="true">↗</span>
-              </span>
+              <span class="lab-owner-role">LinkedIn</span>
             </span>
           </a>
           <h1 id="lab-title">{cfg.pageTitle}</h1>
@@ -657,10 +655,7 @@ const Home: QuartzComponent = (props: QuartzComponentProps) => {
             </a>
             {featured && (
               <a class="lab-created" href={resolveRelative(fileData.slug!, featured.landing)}>
-                {featured.label}{" "}
-                <span class="lab-created-arrow" aria-hidden="true">
-                  →
-                </span>
+                {featured.label}
               </a>
             )}
           </div>
@@ -740,9 +735,7 @@ const Home: QuartzComponent = (props: QuartzComponentProps) => {
       <nav class="lab-archive" id="collections" aria-labelledby="lab-archive-title">
         <div class="lab-archive-heading">
           <h2 id="lab-archive-title">Collections</h2>
-          <a href={exploreHref}>
-            View all posts <span aria-hidden="true">↗</span>
-          </a>
+          <a href={exploreHref}>View all posts</a>
         </div>
         <div class="lab-routes">
           {routes.map((route) => (
@@ -765,7 +758,7 @@ const Home: QuartzComponent = (props: QuartzComponentProps) => {
                 </ul>
               )}
               <span class="lab-route-cta">
-                {route.cta} <span aria-hidden="true">→</span>
+                <span>{route.cta}</span>
               </span>
             </a>
           ))}
@@ -776,9 +769,7 @@ const Home: QuartzComponent = (props: QuartzComponentProps) => {
         <section class="hd-latest hd-latest-home" aria-label="Latest writeups">
           <div class="lab-archive-heading">
             <h2>Latest writeups</h2>
-            <a href={exploreHref}>
-              View all <span aria-hidden="true">↗</span>
-            </a>
+            <a href={exploreHref}>View all</a>
           </div>
           <div class="hd-latest-grid">
             {latest.map((entry) => (

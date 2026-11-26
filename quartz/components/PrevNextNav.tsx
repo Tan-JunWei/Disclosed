@@ -39,7 +39,7 @@ const PrevNextNav: QuartzComponent = ({ fileData, allFiles }: QuartzComponentPro
     <nav class="prev-next-nav">
       {prev ? (
         <a href={resolveRelative(currentSlug, prev.slug!)} class="prev-next-link prev-link">
-          <span class="prev-next-direction">← Previous</span>
+          <span class="prev-next-direction">Previous</span>
           <span class="prev-next-title">
             {(prev.frontmatter?.title as string | undefined) ?? simplifySlug(prev.slug!)}
           </span>
@@ -49,7 +49,7 @@ const PrevNextNav: QuartzComponent = ({ fileData, allFiles }: QuartzComponentPro
       )}
       {next ? (
         <a href={resolveRelative(currentSlug, next.slug!)} class="prev-next-link next-link">
-          <span class="prev-next-direction">Next →</span>
+          <span class="prev-next-direction">Next</span>
           <span class="prev-next-title">
             {(next.frontmatter?.title as string | undefined) ?? simplifySlug(next.slug!)}
           </span>

@@ -40,7 +40,7 @@ export default {
     },
     recentNotes: {
       title: "Zuletzt bearbeitete Seiten",
-      seeRemainingMore: ({ remaining }) => `${remaining} weitere ansehen →`,
+      seeRemainingMore: ({ remaining }) => `${remaining} weitere ansehen`,
     },
     transcludes: {
       transcludeOf: ({ targetSlug }) => `Transklusion von ${targetSlug}`,

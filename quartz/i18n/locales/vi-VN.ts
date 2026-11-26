@@ -40,7 +40,7 @@ export default {
     },
     recentNotes: {
       title: "Bài viết gần đây",
-      seeRemainingMore: ({ remaining }) => `Xem ${remaining} thêm →`,
+      seeRemainingMore: ({ remaining }) => `Xem ${remaining} thêm`,
     },
     transcludes: {
       transcludeOf: ({ targetSlug }) => `Bao gồm ${targetSlug}`,

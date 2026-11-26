@@ -79,9 +79,7 @@ const CtfHub: QuartzComponent = (props: QuartzComponentProps) => {
                 ))}
               </ul>
             )}
-            <span class="lab-route-cta">
-              Open writeups <span aria-hidden="true">→</span>
-            </span>
+            <span class="lab-route-cta">Open writeups</span>
           </a>
         ))}
       </div>
